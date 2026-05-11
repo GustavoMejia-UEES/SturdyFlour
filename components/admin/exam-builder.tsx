@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
-import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, XCircle } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2 } from "lucide-react";
 
 interface Props {
   onChange: (questions: Question[]) => void;
@@ -101,7 +101,7 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                 <Label>Tipo de Pregunta</Label>
                 <Select 
                   value={qType} 
-                  onValueChange={(v: any) => setQType(v)}
+                  onValueChange={(v: 'MULTIPLE_CHOICE' | 'AI_OPEN_QUESTION') => setQType(v)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar tipo..." />
@@ -192,7 +192,7 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
       <div className="space-y-3">
         {questions.length === 0 ? (
           <div className="text-center p-8 border-2 border-dashed rounded-xl bg-slate-50 text-muted-foreground text-sm">
-            No hay preguntas cargadas todavía. Haz click en "Añadir Pregunta" para empezar.
+            No hay preguntas cargadas todavía. Haz click en &quot;Añadir Pregunta&quot; para empezar.
           </div>
         ) : (
           questions.map((q, idx) => (

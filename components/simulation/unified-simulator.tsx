@@ -16,12 +16,12 @@ type AIResult = {
   found_concepts: string[];
 }
 
-export function UnifiedSimulator({ testTitle, testType, courseName, questions, assessmentId, courseId }: { 
+export function UnifiedSimulator({ testTitle, courseName, questions, courseId }: { 
   testTitle: string;
-  testType: string;
+  testType?: string;
   courseName: string;
   questions: Question[];
-  assessmentId: string;
+  assessmentId?: string;
   courseId: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -125,7 +125,7 @@ export function UnifiedSimulator({ testTitle, testType, courseName, questions, a
                       <span className="font-mono text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded shadow-sm">IA SCORING: {evalRes?.score ?? 0}%</span>
                     </div>
                     <div className="text-sm bg-slate-50 p-3 rounded border mb-3 italic text-slate-700">
-                      "{userAnswers[q.id]}"
+                      &quot;{userAnswers[q.id]}&quot;
                     </div>
                     <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 flex gap-3">
                       <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
