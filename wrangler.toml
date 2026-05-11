@@ -1,5 +1,5 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "sturdy-flour"
+name = "sturdyflour"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 main = ".vercel/output/static/_worker.js"
