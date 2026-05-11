@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "build": "next build && npx @cloudflare/next-on-pages",
+    "preview": "npx wrangler pages dev",
+    "lint": "next lint"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.71",
