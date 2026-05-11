@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/shared/navbar";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { Show, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { BrainCircuit, FileText, GraduationCap, Sparkles } from "lucide-react";
 
@@ -26,20 +26,20 @@ export default function Home() {
         </p>
 
         <div className="flex gap-4">
-          <SignedIn>
+          <Show when="signed-in">
             <Link href="/dashboard">
               <Button size="lg" className="h-12 px-8 text-lg font-semibold gap-2">
                 <GraduationCap /> Ir al Dashboard
               </Button>
             </Link>
-          </SignedIn>
-          <SignedOut>
+          </Show>
+          <Show when="signed-out">
             <SignInButton mode="modal">
               <Button size="lg" className="h-12 px-8 text-lg font-semibold gap-2">
                 Empezar Ahora Gratis <BrainCircuit />
               </Button>
             </SignInButton>
-          </SignedOut>
+          </Show>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl w-full text-left">

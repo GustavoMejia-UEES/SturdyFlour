@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { UserButton, Show, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
@@ -18,17 +18,17 @@ export function Navbar() {
         </Link>
 
         <nav className="flex items-center space-x-4">
-          <SignedIn>
+          <Show when="signed-in">
             <Link href="/dashboard">
-              <Button variant="ghost">Dashboard</Button>
+              <Button variant="ghost" className="font-semibold text-sm">Dashboard</Button>
             </Link>
             <UserButton afterSignOutUrl="/" />
-          </SignedIn>
-          <SignedOut>
+          </Show>
+          <Show when="signed-out">
             <SignInButton mode="modal">
-              <Button>Empezar Gratis</Button>
+              <Button className="font-bold shadow-sm border border-slate-800 text-sm bg-slate-900 hover:bg-slate-800 text-white">Entrar</Button>
             </SignInButton>
-          </SignedOut>
+          </Show>
         </nav>
       </div>
     </header>
