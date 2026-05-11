@@ -22,7 +22,7 @@ export function Navbar() {
             <Link href="/dashboard">
               <Button variant="ghost" className="font-semibold text-sm">Dashboard</Button>
             </Link>
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </Show>
           <Show when="signed-out">
             <SignInButton mode="modal">
