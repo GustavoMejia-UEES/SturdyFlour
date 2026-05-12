@@ -48,14 +48,14 @@ export default async function Home() {
 
         <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
           {isSignedIn ? (
-            <Link href="/dashboard">
+            <Link href="/cursos">
               <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl shadow-cyan-500/20 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 gap-3 border-none group w-full sm:w-auto scale-105 transition-transform">
                 <GraduationCap className="group-hover:scale-110 transition-transform" /> Ir al Catálogo
               </Button>
             </Link>
           ) : (
             <>
-              <Link href="/dashboard">
+              <Link href="/cursos">
                 <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl shadow-cyan-500/20 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 gap-3 border-none group w-full sm:w-auto scale-105 transition-transform">
                   <GraduationCap className="group-hover:scale-110 transition-transform" /> Entrar como Invitado
                 </Button>

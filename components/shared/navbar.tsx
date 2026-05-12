@@ -24,8 +24,8 @@ export async function Navbar() {
         <nav className="flex items-center space-x-4">
           {isSignedIn ? (
             <>
-              <Link href="/dashboard">
-                <Button variant="ghost" className="font-bold text-sm text-slate-300 hover:text-cyan-300 hover:bg-white/5 transition-all">Dashboard</Button>
+              <Link href="/cursos">
+                <Button variant="ghost" className="font-bold text-sm text-slate-300 hover:text-cyan-300 hover:bg-white/5 transition-all">Cursos</Button>
               </Link>
               <div className="border-l border-white/10 pl-4 h-8 flex items-center gap-3">
                 <span className="text-sm font-bold text-cyan-400 hidden sm:inline-block tracking-tight bg-cyan-950/30 px-3 py-1 rounded-full border border-cyan-900/50">

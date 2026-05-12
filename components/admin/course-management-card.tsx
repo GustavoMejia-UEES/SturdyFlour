@@ -20,7 +20,7 @@ export function CourseManagementCard({ courseId, courseName, themeColor }: { cou
     setIsDeleting(true);
     try {
       await deleteCourse(courseId);
-      router.push("/dashboard");
+      router.push("/cursos");
       router.refresh();
     } catch (e: any) {
       alert("Error al eliminar: " + e.message);

@@ -77,7 +77,7 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
         />
 
         <div className="container mx-auto px-4 relative z-10">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-300 hover:text-white text-sm transition-colors mb-6 font-medium">
+          <Link href="/cursos" className="inline-flex items-center gap-2 text-slate-300 hover:text-white text-sm transition-colors mb-6 font-medium">
             <ArrowLeft className="h-4 w-4" /> Catálogo General
           </Link>
           <div className="flex gap-3 mb-4">

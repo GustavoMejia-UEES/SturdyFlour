@@ -44,7 +44,7 @@ export function ImportForm() {
       await uploadCourseDefinition(payloadStr);
       setStatus({ type: 'success', message: 'Contenido publicado y sincronizado exitosamente. Redirigiendo...' });
       setTimeout(() => {
-        router.push(contextCourseId ? `/course/${contextCourseId}` : '/dashboard');
+        router.push(contextCourseId ? `/course/${contextCourseId}` : '/cursos');
         router.refresh();
       }, 1500);
     } catch (e: any) {
@@ -112,7 +112,7 @@ export function ImportForm() {
 
       setStatus({ type: 'success', message: '¡Éxito! Contenido añadido perfectamente. Redirigiendo...' });
       setTimeout(() => {
-        router.push(contextCourseId ? `/course/${contextCourseId}` : '/dashboard');
+        router.push(contextCourseId ? `/course/${contextCourseId}` : '/cursos');
         router.refresh();
       }, 1500);
 

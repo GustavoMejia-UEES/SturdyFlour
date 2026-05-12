@@ -35,7 +35,7 @@ export default function LoginPage() {
       }
 
       // Success, redirect immediately to dashboard!
-      router.push('/dashboard');
+      router.push('/cursos');
       router.refresh(); // force server re-validation for layouts
     } catch (err: any) {
       setError(err.message);
