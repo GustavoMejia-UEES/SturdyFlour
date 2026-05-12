@@ -6,6 +6,7 @@ First, run the development server:
 
 ```bash
 npm run dev
+# SturdyFlour App - Deployed v1.0
 # or
 yarn dev
 # or
