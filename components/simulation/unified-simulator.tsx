@@ -71,14 +71,16 @@ export const markdownComponents = {
 };
 // ------------------------------------------------
 
-export function UnifiedSimulator({ testTitle, courseName, questions, courseId }: { 
+export interface UnifiedSimulatorProps { 
   testTitle: string;
   testType?: string;
   courseName: string;
   questions: Question[];
   assessmentId?: string;
   courseId: string;
-}) {
+}
+
+export function UnifiedSimulator({ testTitle, courseName, questions, courseId }: UnifiedSimulatorProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   
