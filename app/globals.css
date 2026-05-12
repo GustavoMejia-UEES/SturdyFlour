@@ -5,26 +5,26 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: 160 10% 99%; /* Slightly off-white warm tint */
-  --foreground: 160 25% 12%;
+  --background: 180 10% 98%;
+  --foreground: 224 71.4% 4.1%;
   --card: 0 0% 100%;
-  --card-foreground: 160 25% 12%;
+  --card-foreground: 224 71.4% 4.1%;
   --popover: 0 0% 100%;
-  --popover-foreground: 160 25% 12%;
-  --primary: 160 35% 20%; /* Elegant Dark Forest/Sage Green */
-  --primary-foreground: 160 15% 98%;
-  --secondary: 160 15% 95%; /* Light Sage */
-  --secondary-foreground: 160 35% 20%;
-  --muted: 160 10% 92%;
-  --muted-foreground: 160 10% 40%;
-  --accent: 160 20% 94%;
-  --accent-foreground: 160 35% 20%;
+  --popover-foreground: 224 71.4% 4.1%;
+  --primary: 172 90% 35%; /* Neon Cyber Teal from Logo */
+  --primary-foreground: 172 10% 98%;
+  --secondary: 172 20% 96%;
+  --secondary-foreground: 172 90% 25%;
+  --muted: 220 14.3% 95.9%;
+  --muted-foreground: 220 8.9% 46.1%;
+  --accent: 172 20% 94%;
+  --accent-foreground: 172 90% 25%;
   --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 160 15% 90%;
-  --input: 160 15% 90%;
-  --ring: 160 35% 20%;
-  --radius: 1rem; /* Elegant large rounding as requested by the UX guide */
+  --destructive-foreground: 210 20% 98%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 172 90% 35%;
+  --radius: 1rem;
 }
 
 .dark {

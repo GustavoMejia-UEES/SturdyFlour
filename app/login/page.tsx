@@ -51,11 +51,11 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
       
       <Link href="/" className="absolute top-8 left-8 flex items-center space-x-2 hover:opacity-80 transition-all">
-        <div className="h-8 w-8 relative bg-primary rounded-lg flex items-center justify-center shadow-md">
+        <div className="h-8 w-8 relative flex items-center justify-center">
           <img 
-            src="https://images.vexels.com/media/users/3/247540/isolated/preview/2b41fd33fc2c2a3b7d52e9511a7fe99f-flour-text-label-stroke.png" 
+            src="/Logo.png" 
             alt="Logo" 
-            className="h-5 w-5 object-contain invert brightness-200"
+            className="h-full w-full object-contain"
           />
         </div>
         <span className="font-bold text-lg text-foreground tracking-tight">SturdyFlour</span>
