@@ -35,15 +35,15 @@ export default async function Home() {
 
         <div className="inline-flex items-center rounded-full border border-cyan-500/30 px-4 py-1.5 text-sm font-bold bg-cyan-950/40 backdrop-blur text-cyan-300 mb-8 shadow-[0_0_15px_rgba(0,255,200,0.1)] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <Sparkles className="h-4 w-4 mr-2 fill-cyan-400 text-cyan-400 animate-pulse" />
-          Free Code AI Repositorio Académico
+          Plataforma UEES Edition
         </div>
 
         <h1 className="text-5xl md:text-8xl font-black tracking-tight mb-6 max-w-5xl animate-in fade-in duration-700 delay-150 leading-[0.95] text-white drop-shadow-2xl">
-          Transforma tus apuntes en <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-teal-300 to-purple-400 drop-shadow-[0_0_10px_rgba(0,255,200,0.3)]">Simuladores</span>
+          Domina tus exámenes <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-teal-300 to-purple-400 drop-shadow-[0_0_10px_rgba(0,255,200,0.3)]">UEES</span>
         </h1>
 
         <p className="text-xl text-slate-300/80 mb-12 max-w-2xl animate-in fade-in duration-700 delay-300 leading-relaxed font-medium">
-          Entrenador asíncrono avanzado potenciado por Gemini. Domina tus materias practicando con modelos de IA generados a tu medida.
+          Pon a prueba tus habilidades y prepárate para estar listo. Un espacio directo para unos amigos y yo para reventar las materias practicando.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">

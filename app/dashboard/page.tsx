@@ -75,45 +75,73 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {courseList.map((course) => (
-              <Card key={course.id} className="group overflow-hidden border-border/40 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 bg-card rounded-3xl">
-                <div 
-                  className="h-2 w-full" 
-                  style={{ backgroundColor: course.themeColor || '#2563eb' }}
-                />
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <span 
-                      className="text-xs font-mono px-2 py-1 rounded font-bold uppercase"
-                      style={{ backgroundColor: `${course.themeColor || '#2563eb'}15`, color: course.themeColor || '#2563eb' }}
+              <Link href={`/course/${course.id}`} key={course.id} className="group flex flex-col h-full">
+                <Card className="h-full flex flex-col overflow-hidden border-0 shadow-[0_8px_30px_rgba(0,0,0,0.05)] group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-all duration-500 hover:-translate-y-2 rounded-[2rem] relative bg-white dark:bg-slate-900 border-t-4" style={{ borderTopColor: course.themeColor || '#2563eb' }}>
+                  
+                  {/* HIGH IMPACT VISUAL HEADER */}
+                  <div 
+                    className="h-44 w-full relative flex items-center justify-center overflow-hidden group-hover:saturate-150 transition-all duration-700"
+                    style={{ backgroundColor: `${course.themeColor || '#2563eb'}15` }}
+                  >
+                    {/* Visual background noise/pattern */}
+                    <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mix-blend-multiply" />
+                    
+                    {/* GIANT DECORATIVE BACKGROUND CODE */}
+                    <div 
+                      className="absolute -right-4 -bottom-8 text-8xl font-black opacity-10 rotate-12 select-none transition-transform duration-700 group-hover:translate-x-4"
+                      style={{ color: course.themeColor || '#2563eb' }}
                     >
-                      {course.code}
+                      {course.code?.slice(0,3).toUpperCase() || "CRS"}
+                    </div>
+
+                    <div className="relative z-10 text-center px-6 w-full">
+                      <div 
+                        className="inline-flex text-[10px] font-black tracking-widest uppercase mb-2 px-3 py-1 rounded-full border"
+                        style={{ 
+                          backgroundColor: `${course.themeColor || '#2563eb'}20`, 
+                          borderColor: `${course.themeColor || '#2563eb'}30`,
+                          color: course.themeColor || '#2563eb' 
+                        }}
+                      >
+                        {course.code}
+                      </div>
+                      <h3 
+                        className="text-2xl font-black leading-tight tracking-tight line-clamp-3 text-slate-900 dark:text-white"
+                      >
+                        {course.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* CONTENT AREA */}
+                  <CardContent className="p-6 flex-1 flex flex-col bg-white dark:bg-slate-900">
+                    <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 transition-colors group-hover:bg-white dark:group-hover:bg-slate-800 duration-500">
+                      <div 
+                        className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-md"
+                        style={{ backgroundColor: course.themeColor || '#2563eb' }}
+                      >
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">Docente</p>
+                        <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{course.instructor || 'Docente General'}</p>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4 flex-1 font-medium">
+                      {course.gradeLevel ? `Periodo Académico: ${course.gradeLevel}. ` : ''}
+                      Módulo de práctica dinámico con retroalimentación de IA y acceso continuo.
+                    </p>
+                  </CardContent>
+
+                  {/* ACTION BAR */}
+                  <CardFooter className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center group-hover:bg-white dark:group-hover:bg-slate-800 transition-all duration-300">
+                    <span className="text-xs font-black tracking-widest uppercase flex items-center gap-2 group-hover:gap-3 transition-all" style={{ color: course.themeColor || '#2563eb' }}>
+                      Entrar al Módulo <ChevronRight className="h-4 w-4" />
                     </span>
-                    {course.gradeLevel && (
-                      <span className="text-xs text-muted-foreground">{course.gradeLevel}</span>
-                    )}
-                  </div>
-                  <CardTitle className="text-xl font-extrabold tracking-tight leading-tight group-hover:text-primary transition-colors">
-                    {course.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pb-6">
-                  <div className="flex items-center text-sm text-muted-foreground gap-2 bg-muted/50 p-2 rounded-lg border">
-                    <User className="h-4 w-4" />
-                    <span className="truncate font-medium">{course.instructor}</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="bg-muted/20 pt-4">
-                  <Link href={`/course/${course.id}`} className="w-full">
-                    <Button 
-                      className="w-full justify-between text-white shadow-sm border-0 transition-all opacity-95 hover:opacity-100" 
-                      style={{ backgroundColor: course.themeColor || '#2563eb' }}
-                    >
-                      Entrar al Módulo 
-                      <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
+                  </CardFooter>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
