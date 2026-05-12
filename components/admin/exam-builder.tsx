@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
 import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, FileJson, Sigma, HelpCircle, Eye, Pencil, Info, Copy, AlertTriangle, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -164,7 +164,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
     // Populate Common Fields
     setQTitle(extractedTitle);
     setQBody(text);
-    setQFeedback(q.feedback_general || "");
+    setQFeedback(q.type === 'MULTIPLE_CHOICE' ? (q.feedback_general || "") : "");
     setImageUrl(q.image_url || "");
     
     // Determine & Populate Type Specifics

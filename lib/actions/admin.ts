@@ -193,7 +193,7 @@ export async function getAssessmentData(assessmentId: string) {
 /**
  * Surgical edit of an existing assessment
  */
-export async function editAssessmentContent(assessmentId: string, data: { title: string, type: string, questions: any[] }) {
+export async function editAssessmentContent(assessmentId: string, data: { title: string, type: 'PRACTICE' | 'GRADED', questions: any[] }) {
   await requireRole(['ADMIN', 'EDITOR']);
   const env = getRequestContext().env;
   const db = getDb(env.DB);
