@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
-import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, Sigma } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, Sigma, HelpCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -42,6 +42,7 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
   const [correctIds, setCorrectIds] = useState<string[]>(["a"]);
   const [codeSnippet, setCodeSnippet] = useState("");
   const [codeLang, setCodeLang] = useState("javascript");
+  const [isFormulaGuideOpen, setIsFormulaGuideOpen] = useState(false);
 
   // AI State
   const [aiTopic, setAiTopic] = useState("");
@@ -276,7 +277,10 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                         <div className="grid gap-1.5">
                           <div className="flex justify-between items-center gap-2">
                             <Label className="text-slate-700 font-semibold">Contenido / Contexto</Label>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 items-center">
+                              <button type="button" className="p-1 text-slate-400 hover:text-blue-600 transition-colors mr-1" onClick={() => setIsFormulaGuideOpen(true)} title="Ver Guía de Fórmulas">
+                                <HelpCircle className="h-3.5 w-3.5" />
+                              </button>
                               <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-400 hover:text-primary" onClick={insertFormula}>
                                 <Sigma className="h-3 w-3 mr-1" /> Fórmula
                               </Button>
@@ -440,6 +444,44 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                 </div>
               );
             })()}
+          </DialogContent>
+        </Dialog>
+
+        {/* HELP DIALOG: FORMULA GUIDE */}
+        <Dialog open={isFormulaGuideOpen} onOpenChange={setIsFormulaGuideOpen}>
+          <DialogContent className="max-w-md bg-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sigma className="h-5 w-5 text-blue-600" /> Guía de Fórmulas LaTeX
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 text-sm text-slate-700">
+              <p>Puedes insertar ecuaciones tipográficas profesionales usando delimitadores de dólar:</p>
+              
+              <div className="p-3 rounded-lg bg-slate-50 border space-y-2">
+                <div className="font-bold text-xs uppercase text-slate-400">Fórmula en Línea (dentro del texto)</div>
+                <code className="text-pink-600 block font-mono bg-white p-2 rounded border">$ E = mc^2 $</code>
+                <p className="text-xs text-slate-500">Usa un solo signo de dólar al inicio y al final.</p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-slate-50 border space-y-2">
+                <div className="font-bold text-xs uppercase text-slate-400">Fórmula en Bloque (línea separada)</div>
+                <code className="text-pink-600 block font-mono bg-white p-2 rounded border">$$ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$</code>
+                <p className="text-xs text-slate-500">Usa doble signo de dólar para que ocupe todo el ancho y se centre.</p>
+              </div>
+
+              <div className="mt-2 pt-2 border-t">
+                <p className="font-bold mb-1 text-xs text-slate-500">Símbolos Comunes:</p>
+                <ul className="grid grid-cols-2 gap-2 text-xs font-mono">
+                  <li>Fracción: <span className="text-pink-600">\frac&#123;a&#125;&#123;b&#125;</span></li>
+                  <li>Raíz: <span className="text-pink-600">\sqrt&#123;x&#125;</span></li>
+                  <li>Potencia: <span className="text-pink-600">x^2</span></li>
+                  <li>Subíndice: <span className="text-pink-600">x_i</span></li>
+                  <li>Suma: <span className="text-pink-600">\sum</span></li>
+                  <li>Integral: <span className="text-pink-600">\int</span></li>
+                </ul>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
         </div>

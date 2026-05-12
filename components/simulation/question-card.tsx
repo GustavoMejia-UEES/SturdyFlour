@@ -30,9 +30,9 @@ export function QuestionVisualCard({ question, value, onChange, disabled }: Prop
             {question.type === 'AI_OPEN_QUESTION' ? 'Respuesta Abierta (IA)' : 'Selección Múltiple'}
           </span>
         </div>
-        <CardTitle className="text-xl md:text-2xl font-bold leading-tight text-slate-800 prose max-w-none">
+        <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:leading-relaxed prose-headings:text-slate-900 prose-headings:font-extrabold">
           <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{question.question_text || "*(Sin título todavía)*"}</ReactMarkdown>
-        </CardTitle>
+        </div>
         {question.image_url && (
           <div className="mt-4 rounded-xl overflow-hidden border bg-black/5 max-h-[300px] flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}

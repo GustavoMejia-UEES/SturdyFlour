@@ -85,20 +85,25 @@
 }
 
 /* Enhance Markdown Typography Scale for Courseware */
+.prose {
+  font-size: 0.95rem; /* slightly smaller base */
+  line-height: 1.6;
+}
 .prose h1 {
-  @apply text-3xl font-black text-slate-900 mb-4 mt-2;
+  @apply text-2xl font-bold text-slate-900 mb-3 mt-4;
 }
 .prose h2 {
-  @apply text-2xl font-extrabold text-slate-800 mb-3 mt-2;
+  @apply text-xl font-bold text-slate-800 mb-2 mt-3;
 }
 .prose h3 {
-  @apply text-xl font-bold text-slate-800 mb-2 mt-1;
+  @apply text-lg font-semibold text-slate-800 mb-1.5 mt-2;
 }
 .prose p {
-  @apply text-slate-600 leading-relaxed mb-2;
+  @apply text-slate-600 leading-normal mb-3;
+  font-weight: 400 !important;
 }
 .prose strong {
-  @apply font-bold text-slate-900;
+  @apply font-bold text-slate-800;
 }
 
 @import "katex/dist/katex.min.css";
