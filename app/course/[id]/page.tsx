@@ -19,7 +19,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   const params = await props.params;
   const env = getRequestContext().env;
   const db = getDb(env.DB);
-  const course = await db.query.courses.findFirst({ where: eq(courses.id, params.id) });
+  const [course] = await db.select({ name: courses.name }).from(courses).where(eq(courses.id, params.id)).limit(1);
   return { title: course ? course.name : 'Curso' };
 }
 
@@ -29,9 +29,22 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
   const env = getRequestContext().env;
   const db = getDb(env.DB);
 
-  const course = await db.query.courses.findFirst({
-    where: eq(courses.id, params.id),
-  });
+  let course;
+  try {
+    [course] = await db.select().from(courses)
+      .where(eq(courses.id, params.id))
+      .limit(1);
+  } catch (err) {
+    // Fallback query ignoring newly added dynamic styling columns
+    const [fallback] = await db.select({
+      id: courses.id,
+      code: courses.code,
+      name: courses.name,
+      instructor: courses.instructor,
+      gradeLevel: courses.gradeLevel,
+    }).from(courses).where(eq(courses.id, params.id)).limit(1);
+    course = fallback ? { ...fallback, themeColor: '#2563eb' } : null;
+  }
 
   if (!course) return notFound();
 

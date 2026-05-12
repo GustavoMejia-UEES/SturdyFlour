@@ -28,7 +28,16 @@ export default async function DashboardPage() {
   try {
     courseList = await db.select().from(courses).orderBy(desc(courses.createdAt)).all();
   } catch (e) {
-    console.error("Failed to load courses from D1", e);
+    // Fallback for missing-column safe retrieval
+    const fallbackList = await db.select({
+      id: courses.id,
+      code: courses.code,
+      name: courses.name,
+      instructor: courses.instructor,
+      gradeLevel: courses.gradeLevel,
+    }).from(courses).orderBy(desc(courses.createdAt)).all();
+    
+    courseList = fallbackList.map(c => ({ ...c, themeColor: '#2563eb', createdAt: null }));
   }
 
   return (
@@ -96,10 +105,8 @@ export default async function DashboardPage() {
                 <CardFooter className="bg-muted/20 pt-4">
                   <Link href={`/course/${course.id}`} className="w-full">
                     <Button 
-                      className="w-full justify-between text-white shadow-sm border-0 transition-all" 
-                      style={{ backgroundColor: course.themeColor || '#2563eb', filter: 'brightness(1)', opacity: 0.95 }}
-                      onMouseOver={(e) => (e.currentTarget.style.opacity = '1')}
-                      onMouseOut={(e) => (e.currentTarget.style.opacity = '0.95')}
+                      className="w-full justify-between text-white shadow-sm border-0 transition-all opacity-95 hover:opacity-100" 
+                      style={{ backgroundColor: course.themeColor || '#2563eb' }}
                     >
                       Entrar al Módulo 
                       <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
