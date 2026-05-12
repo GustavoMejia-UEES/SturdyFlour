@@ -213,14 +213,80 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
             const isCorrect = JSON.stringify(correctSorted) === JSON.stringify(ansSorted);
 
             return (
-              <Card key={q.id} className={cn("border-l-4", isCorrect ? "border-l-green-500" : "border-l-red-500")}>
-                 <CardContent className="p-5">
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
-                      {isCorrect ? <CheckCircle2 className="text-green-600 h-5 w-5 shrink-0" /> : <XCircle className="text-red-600 h-5 w-5 shrink-0" />}
+              <Card key={q.id} className={cn("border-l-4 shadow-sm bg-white", isCorrect ? "border-l-emerald-500" : "border-l-rose-500")}>
+                 <CardContent className="p-5 md:p-6">
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                      <h4 className="font-bold leading-tight text-slate-900 flex-1 prose prose-sm max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
+                          {`${idx + 1}. ${q.question_text}`}
+                        </ReactMarkdown>
+                      </h4>
+                      {isCorrect ? (
+                        <span className="flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Correcto
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-[10px] font-black uppercase text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shrink-0">
+                          <XCircle className="h-3.5 w-3.5" /> Incorrecto
+                        </span>
+                      )}
                     </div>
-                    {q.feedback_general && !isCorrect && (
-                      <p className="text-xs text-slate-500 bg-slate-50 border p-2 rounded mt-2">💡 Tip: {q.feedback_general}</p>
+
+                    {/* Visual Audit of MCQ Options */}
+                    <div className="space-y-2.5 mt-4 max-w-3xl">
+                      {q.options?.map((opt: any) => {
+                        const isOptSelected = Array.isArray(currentAns) ? currentAns.includes(opt.id) : currentAns === opt.id;
+                        const isOptCorrect = Array.isArray(q.correct_id) ? q.correct_id.includes(opt.id) : q.correct_id === opt.id;
+
+                        return (
+                          <div 
+                            key={opt.id} 
+                            className={cn(
+                              "flex items-start gap-3 p-3.5 rounded-2xl border text-[13px] font-medium leading-relaxed transition-all duration-300 font-sans",
+                              isOptCorrect && isOptSelected && "bg-emerald-50 border-emerald-200 text-emerald-900 shadow-sm ring-1 ring-emerald-500/10",
+                              !isOptCorrect && isOptSelected && "bg-rose-50 border-rose-200 text-rose-900 shadow-sm",
+                              isOptCorrect && !isOptSelected && "bg-teal-50/20 border-teal-200/60 text-slate-800 border-dashed",
+                              !isOptCorrect && !isOptSelected && "bg-slate-50 border-slate-200 text-slate-500 opacity-70"
+                            )}
+                          >
+                            <div className="shrink-0 mt-0.5 h-5 w-5 rounded-full border flex items-center justify-center text-[10px] font-black bg-white font-mono shadow-sm">
+                              {opt.id.toUpperCase()}
+                            </div>
+                            <div className="flex-1 prose prose-slate prose-sm max-w-none text-inherit font-inherit prose-p:m-0 leading-normal">
+                              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
+                                {opt.text}
+                              </ReactMarkdown>
+                            </div>
+                            <div className="shrink-0 flex gap-1.5 ml-2 select-none">
+                              {isOptSelected && isOptCorrect && (
+                                <span className="text-[9px] font-black uppercase bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" /> Tu Elección
+                                </span>
+                              )}
+                              {isOptSelected && !isOptCorrect && (
+                                <span className="text-[9px] font-black uppercase bg-rose-200 text-rose-800 px-2 py-0.5 rounded-md border border-rose-300 flex items-center gap-1">
+                                  <XCircle className="h-3 w-3" /> Tu Elección
+                                </span>
+                              )}
+                              {!isOptSelected && isOptCorrect && (
+                                <span className="text-[9px] font-black uppercase bg-teal-100 text-teal-800 px-2 py-0.5 rounded-md border border-teal-200 flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" /> Correcta
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {q.feedback_general && (
+                      <div className="bg-amber-50 border border-amber-100 text-amber-900 text-xs p-3.5 rounded-xl mt-4 flex items-start gap-2.5">
+                        <Sparkles className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                        <div>
+                          <strong className="block mb-0.5 font-black uppercase tracking-wide text-[10px]">Explicación Detallada:</strong>
+                          <span className="font-medium text-amber-800 leading-relaxed">{q.feedback_general}</span>
+                        </div>
+                      </div>
                     )}
                  </CardContent>
               </Card>

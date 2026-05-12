@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
-import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, FileJson, Sigma, HelpCircle, Eye, Pencil, Info, Copy, AlertTriangle } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, FileJson, Sigma, HelpCircle, Eye, Pencil, Info, Copy, AlertTriangle, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -98,6 +98,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
   
   // Dialog state for new question creation
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [uiType, setUiType] = useState<'MCQ' | 'TF' | 'CODE' | 'AI'>('MCQ');
   const [qTitle, setQTitle] = useState("");
   const [qBody, setQBody] = useState("");
@@ -134,6 +135,71 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
   function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
+  }
+
+  function handleStartEdit(q: Question) {
+    setEditingId(q.id);
+    
+    let text = q.question_text || "";
+    let extractedTitle = "";
+    
+    // 1. Extract Markdown Header Title if present
+    if (text.startsWith("### ")) {
+      const lines = text.split("\n");
+      extractedTitle = lines[0].replace("### ", "").trim();
+      text = lines.slice(1).join("\n").trim();
+    }
+    
+    // 2. Extract Code Block if present (Regex match ```)
+    let extractedSnippet = "";
+    let extractedLang = "javascript";
+    const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/;
+    const match = text.match(codeBlockRegex);
+    if (match) {
+      extractedLang = match[1] || "javascript";
+      extractedSnippet = match[2] || "";
+      text = text.replace(codeBlockRegex, "").trim();
+    }
+    
+    // Populate Common Fields
+    setQTitle(extractedTitle);
+    setQBody(text);
+    setQFeedback(q.feedback_general || "");
+    setImageUrl(q.image_url || "");
+    
+    // Determine & Populate Type Specifics
+    if (q.type === 'AI_OPEN_QUESTION') {
+      setUiType('AI');
+      setAiTopic(q.ai_context?.topic || "");
+      setAiConcepts(q.ai_context?.expected_concepts?.join(", ") || "");
+    } else {
+      // MULTIPLE CHOICE TYPES (Standard, Code Sandbox, or True/False)
+      const opts = q.options || [];
+      setMcqOptions(opts.length ? opts : [{ id: "a", text: "" }, { id: "b", text: "" }]);
+      
+      // Normalize correct ID into array
+      if (Array.isArray(q.correct_id)) {
+        setCorrectIds(q.correct_id);
+      } else {
+        setCorrectIds(q.correct_id ? [q.correct_id] : ["a"]);
+      }
+      
+      if (extractedSnippet) {
+        setUiType('CODE');
+        setCodeSnippet(extractedSnippet);
+        setCodeLang(extractedLang);
+      } else if (
+        opts.length === 2 && 
+        opts.some(o => o.text.toLowerCase() === 'verdadero') && 
+        opts.some(o => o.text.toLowerCase() === 'falso')
+      ) {
+        setUiType('TF');
+      } else {
+        setUiType('MCQ');
+      }
+    }
+    
+    setIsOpen(true);
   }
 
   function openRawJson() {
@@ -248,6 +314,21 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
     setMcqOptions(next);
   }
 
+  function handleOpenNewQuestion() {
+    setEditingId(null);
+    setQTitle("");
+    setQBody("");
+    setQFeedback("");
+    setCodeSnippet("");
+    setAiTopic("");
+    setAiConcepts("");
+    setCorrectIds(["a"]);
+    setMcqOptions([{ id: "a", text: "" }, { id: "b", text: "" }]);
+    setImageUrl("");
+    setUiType('MCQ');
+    setIsOpen(true);
+  }
+
   function handleSaveQuestion() {
     const finalTitle = qTitle.trim() ? `### ${qTitle}\n\n` : "";
     let fullContent = `${finalTitle}${qBody}`;
@@ -288,12 +369,16 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
       };
     }
 
-    const updated = [...questions, newQuestion];
+    const updated = editingId 
+      ? questions.map(q => q.id === editingId ? { ...newQuestion, id: editingId } : q)
+      : [...questions, newQuestion];
+    
     setQuestions(updated);
     onChange(updated);
     
-    // Reset
+    // Reset form states completely
     setIsOpen(false);
+    setEditingId(null);
     setQTitle("");
     setQBody("");
     setQFeedback("");
@@ -479,7 +564,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                 </div>
               </DialogContent>
             </Dialog>
-            <Button size="sm" onClick={() => setIsOpen(true)} className="gap-1 shadow-sm h-8 font-bold" style={{ backgroundColor: themeColor }}>
+            <Button size="sm" onClick={handleOpenNewQuestion} className="gap-1 shadow-sm h-8 font-bold" style={{ backgroundColor: themeColor }}>
               <PlusCircle className="h-3.5 w-3.5" /> Añadir Pregunta
             </Button>
           </div>
@@ -518,8 +603,13 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                   {/* LEFT SIDE: EDITOR STUDIO */}
                   <div className="w-[45%] h-full overflow-y-auto bg-slate-50/50 border-r flex flex-col">
                     <div className="px-6 py-5 border-b bg-white sticky top-0 z-10 flex justify-between items-center">
-                      <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Editor de Pregunta</h3>
-                      <Button onClick={handleSaveQuestion} className="font-bold gap-2 bg-green-600 hover:bg-green-700 shadow-sm">Guardar Cambios</Button>
+                      <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                        <Sparkles className={cn("h-5 w-5", editingId ? "text-amber-500" : "text-primary")} /> 
+                        {editingId ? 'Actualizar Pregunta' : 'Editor de Pregunta'}
+                      </h3>
+                      <Button onClick={handleSaveQuestion} className="font-black gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-sm text-xs px-4 py-2 h-9 rounded-xl">
+                        {editingId ? 'Guardar Cambios' : 'Añadir al Banco'}
+                      </Button>
                     </div>
                     
                     <div className="p-6 space-y-6">
@@ -764,13 +854,19 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
               Añade tu primera pregunta interactiva para habilitar el examen.
             </p>
-            <Button size="lg" onClick={() => setIsOpen(true)} className="font-bold gap-2 shadow-lg animate-bounce-once" style={{ backgroundColor: themeColor }}>
+            <Button size="lg" onClick={handleOpenNewQuestion} className="font-bold gap-2 shadow-lg animate-bounce-once" style={{ backgroundColor: themeColor }}>
               <PlusCircle className="h-5 w-5" /> ¡Empezar a Crear Preguntas!
             </Button>
           </div>
         ) : (
           questions.map((q, idx) => (
-            <QuestionBankItem key={q.id} q={q} idx={idx} onRemove={() => removeQuestion(q.id)} />
+            <QuestionBankItem 
+              key={q.id} 
+              q={q} 
+              idx={idx} 
+              onRemove={() => removeQuestion(q.id)} 
+              onEdit={() => handleStartEdit(q)}
+            />
           ))
         )}
       </div>
@@ -795,53 +891,76 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
   );
 }
 
-function QuestionBankItem({ q, idx, onRemove }: { q: Question, idx: number, onRemove: () => void }) {
+function QuestionBankItem({ q, idx, onRemove, onEdit }: { q: Question, idx: number, onRemove: () => void, onEdit: () => void }) {
   const [expanded, setExpanded] = React.useState(false);
 
   // Heuristic to decide if text warrants collapse mechanics
   const isLongText = q.question_text.length > 180 || q.question_text.includes("\n\n") || q.question_text.includes("```");
 
   return (
-    <Card className="shadow-sm hover:border-primary/50 transition-colors relative overflow-hidden group bg-white border-slate-200">
+    <Card className="shadow-sm hover:border-indigo-500/30 hover:shadow-md transition-all duration-300 relative overflow-hidden group bg-white border-slate-200 rounded-2xl">
       <CardContent className="p-4 flex items-start justify-between gap-4">
         <div className="flex-1 flex gap-3 min-w-0">
-          <div className="h-7 w-7 bg-slate-100 rounded-md flex items-center justify-center text-xs font-bold shrink-0 border text-slate-600">
+          <div className="h-7 w-7 bg-slate-100 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-200 transition-colors">
             {idx + 1}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase border tracking-wide ${
-                q.type === 'AI_OPEN_QUESTION' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className={`text-[9px] font-black tracking-wider px-2 py-0.5 rounded-lg uppercase border ${
+                q.type === 'AI_OPEN_QUESTION' ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
               }`}>
-                {q.type === 'AI_OPEN_QUESTION' ? 'Respuesta Abierta' : 'Multi-Opción'}
+                {q.type === 'AI_OPEN_QUESTION' ? 'Abierta IA' : 'Multi-Opción'}
               </span>
+              
               {isLongText && (
                 <button 
                   type="button"
                   onClick={() => setExpanded(!expanded)}
-                  className="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors hover:underline uppercase ml-auto shrink-0"
+                  className={cn(
+                    "h-6 w-6 rounded-lg border border-slate-100 flex items-center justify-center transition-all active:scale-90 ml-auto bg-slate-50 text-slate-500 hover:bg-white hover:text-indigo-600 hover:border-indigo-200 shadow-sm shrink-0",
+                    expanded && "rotate-180 border-indigo-200 text-indigo-600 bg-white"
+                  )}
+                  title={expanded ? "Contraer vista" : "Expandir vista"}
                 >
-                  {expanded ? 'Contraer [-]' : 'Expandir [+]'}
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform" />
                 </button>
               )}
             </div>
 
             <div className={cn(
-              "relative font-medium text-sm leading-snug text-slate-800 prose prose-slate prose-sm prose-p:leading-tight w-full max-w-full overflow-x-auto break-words",
-              isLongText && !expanded && "max-h-[100px] overflow-hidden"
+              "relative font-medium text-sm leading-relaxed text-slate-800 prose prose-slate prose-sm prose-p:leading-relaxed w-full max-w-full overflow-x-auto break-words font-sans",
+              isLongText && !expanded && "max-h-[110px] overflow-hidden"
             )}>
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
                 {q.question_text}
               </ReactMarkdown>
               {isLongText && !expanded && (
-                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-full h-14 bg-gradient-to-t from-white to-transparent pointer-events-none" />
               )}
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-slate-300 hover:text-red-600 hover:bg-red-50 shrink-0 h-8 w-8" onClick={onRemove}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        
+        <div className="flex flex-col gap-1 items-center shrink-0">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 shrink-0 h-8 w-8 rounded-xl opacity-40 group-hover:opacity-100 transition-all" 
+            onClick={onEdit}
+            title="Editar pregunta"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0 h-8 w-8 rounded-xl opacity-40 group-hover:opacity-100 transition-all" 
+            onClick={onRemove}
+            title="Eliminar pregunta"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
