@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     template: "SturdyFlour | %s",
   },
   description: "Estudio Académico Universitario con Simulación IA y Repositorio Seguro.",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
