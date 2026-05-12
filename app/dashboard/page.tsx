@@ -69,8 +69,8 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {courseList.map((course) => (
-              <Card key={course.id} className="group overflow-hidden border-border/40 shadow-sm hover:shadow-md transition-all duration-300 bg-card">
-                <div className="h-2 bg-gradient-to-r from-primary via-primary/70 to-blue-500" />
+              <Card key={course.id} className="group overflow-hidden border-border/40 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 bg-card rounded-3xl">
+                <div className="h-2 bg-gradient-to-r from-primary via-primary/80 to-emerald-600" />
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded font-bold uppercase">

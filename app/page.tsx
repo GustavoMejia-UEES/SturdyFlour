@@ -10,53 +10,55 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 md:py-32 bg-radial-[at_50%_-20%] from-slate-100 to-background dark:from-slate-900">
+      <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 md:py-32 bg-radial-[at_50%_-20%] from-primary/10 to-background relative overflow-hidden">
         
-        <div className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-secondary text-secondary-foreground mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <Sparkles className="h-4 w-4 mr-2 fill-yellow-500 text-yellow-500" />
-          El repositorio universitario potenciado por IA
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
+        
+        <div className="inline-flex items-center rounded-full border border-primary/10 px-4 py-1.5 text-sm font-semibold bg-secondary text-secondary-foreground mb-8 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <Sparkles className="h-4 w-4 mr-2 fill-primary text-primary animate-pulse" />
+          Repositorio Inteligente Potenciado por IA
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 max-w-4xl">
-          Transforma tus Slides PDF en <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">Exámenes Prácticos</span>
+        <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 max-w-5xl animate-in fade-in duration-700 delay-150 leading-[0.9]">
+          Transforma tus Diapositivas en <span className="bg-clip-text text-transparent bg-gradient-to-br from-primary via-primary/90 to-emerald-800">Simuladores</span>
         </h1>
 
-        <p className="text-xl text-muted-foreground mb-10 max-w-2xl">
-          Sube tus diapositivas, selecciona la materia y deja que la IA genere simuladores de examen precisos para que apruebes con honores.
+        <p className="text-xl text-muted-foreground/80 mb-12 max-w-2xl animate-in fade-in duration-700 delay-300 leading-relaxed">
+          Procesamiento instantáneo de PDFs con IA avanzada de Gemini. Domina tus materias practicando con exámenes a tu medida.
         </p>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
           <Show when="signed-in">
             <Link href="/dashboard">
-              <Button size="lg" className="h-12 px-8 text-lg font-semibold gap-2">
-                <GraduationCap /> Ir al Dashboard
+              <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group">
+                <GraduationCap className="group-hover:scale-110 transition-transform" /> Entrar al Sistema
               </Button>
             </Link>
           </Show>
           <Show when="signed-out">
             <SignInButton mode="modal">
-              <Button size="lg" className="h-12 px-8 text-lg font-semibold gap-2">
-                Empezar Ahora Gratis <BrainCircuit />
+              <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group">
+                Iniciar Sesión Ahora <BrainCircuit className="group-hover:rotate-12 transition-transform" />
               </Button>
             </SignInButton>
           </Show>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 max-w-5xl w-full text-left">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-28 max-w-5xl w-full text-left px-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-700">
           <FeatureCard 
             icon={<FileText className="h-6 w-6 text-primary" />}
-            title="Carga de PDFs Directa"
-            description="Tus diapositivas de clase guardadas y listas para procesar al instante usando Cloudflare R2."
+            title="Carga Directa de PDFs"
+            description="Tus diapositivas guardadas de forma segura usando Cloudflare R2 nativo."
           />
           <FeatureCard 
             icon={<BrainCircuit className="h-6 w-6 text-primary" />}
-            title="IA de Alta Precisión"
-            description="Alimentado por Google Gemini para capturar conceptos complejos y fórmulas."
+            title="Motores Gemini 1.5"
+            description="Lógica de vanguardia para descomponer conceptos complejos automáticamente."
           />
           <FeatureCard 
             icon={<GraduationCap className="h-6 w-6 text-primary" />}
-            title="Simulador de Examen"
-            description="Practica con límite de tiempo, selección múltiple y feedback en tiempo real."
+            title="Modo Simulación"
+            description="Interfaz inmersiva con retroalimentación inmediata para maximizar retención."
           />
         </div>
       </main>
@@ -66,12 +68,14 @@ export default function Home() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="p-6 rounded-2xl border bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
-      <div className="mb-4 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-        {icon}
+    <div className="p-8 rounded-3xl border border-primary/5 bg-background/60 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1.5 transition-all duration-300 group">
+      <div className="mb-5 h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+        <div className="group-hover:text-white transition-colors duration-300">
+          {icon}
+        </div>
       </div>
-      <h3 className="text-xl font-bold mb-2">{title}</h3>
-      <p className="text-muted-foreground">{description}</p>
+      <h3 className="text-xl font-bold mb-3 tracking-tight text-foreground">{title}</h3>
+      <p className="text-muted-foreground/90 leading-relaxed text-[0.95rem]">{description}</p>
     </div>
   )
 }
