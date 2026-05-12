@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
-import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, FileJson, Sigma, HelpCircle } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, FileJson, Sigma, HelpCircle, Eye, Pencil, Info, Copy, AlertTriangle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -18,6 +18,74 @@ import rehypeKatex from "rehype-katex";
 import { UnifiedSimulator, markdownComponents } from "../simulation/unified-simulator";
 import { QuestionVisualCard } from "../simulation/question-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const DEFAULT_JSON_TEMPLATES: Question[] = [
+  {
+    id: "e3b4a291-182c-4739-b9d1-817bf5da01e2",
+    type: "MULTIPLE_CHOICE",
+    question_text: "### Cálculo de Derivadas\n\n¿Cuál es la derivada de la función de costo respecto al peso utilizando la regla de la cadena?\n\n$$ \\frac{\\partial L}{\\partial w} = \\frac{\\partial L}{\\partial y} \\cdot \\frac{\\partial y}{\\partial w} $$",
+    options: [
+      {
+        id: "a",
+        text: "Es el producto de las derivadas parciales intermedias."
+      },
+      {
+        id: "b",
+        text: "Se calcula sumando las pendientes locales."
+      }
+    ],
+    correct_id: ["a"],
+    feedback_general: "La regla de la cadena establece que multiplicamos las tasas de cambio locales para obtener la tasa de cambio global."
+  },
+  {
+    id: "fa92c340-912b-42ea-a410-b99182fa3c11",
+    type: "MULTIPLE_CHOICE",
+    question_text: "### Evaluación de Condicionales\n\n¿El siguiente bloque de código evalúa a `true` si el arreglo está vacío?\n\n```javascript\nconst items = [];\nif (items.length === 0) {\n  console.log('Vacío');\n}\n```",
+    options: [
+      {
+        id: "a",
+        text: "Verdadero"
+      },
+      {
+        id: "b",
+        text: "Falso"
+      }
+    ],
+    correct_id: "a",
+    feedback_general: "La propiedad `.length` de un arreglo vacío es estrictamente igual a 0."
+  },
+  {
+    id: "8b23c914-cd12-4fb3-a9d5-7cfaef0218ef",
+    type: "MULTIPLE_CHOICE",
+    question_text: "### Tipado en TypeScript\n\nAnaliza el siguiente fragmento de código sobre interfaces:\n\n```typescript\ninterface User {\n  id: string;\n  role: 'admin' | 'user';\n}\n```",
+    options: [
+      {
+        id: "a",
+        text: "El rol solo acepta los literales 'admin' o 'user'."
+      },
+      {
+        id: "b",
+        text: "El rol acepta cualquier cadena de texto (string)."
+      }
+    ],
+    correct_id: "a",
+    feedback_general: "Estamos utilizando un tipo unión de literales string para restringir los valores posibles."
+  },
+  {
+    id: "bc38e912-74ba-45fa-8dfa-1293aabf9d04",
+    type: "AI_OPEN_QUESTION",
+    question_text: "### Optimización de Consultas SQL\n\nExplica con tus propias palabras la diferencia de rendimiento entre un `Table Scan` y un `Index Scan` en una base de datos relacional masiva.",
+    ai_context: {
+      topic: "Bases de Datos",
+      expected_concepts: [
+        "complejidad temporal",
+        "índices b-tree",
+        "lectura de páginas secuencial"
+      ],
+      difficulty: "intermediate"
+    }
+  }
+];
 
 interface Props {
   onChange: (questions: Question[]) => void;
@@ -59,8 +127,18 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
   const [rawJsonInput, setRawJsonInput] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
 
+  // LIGHTWEIGHT TOAST NOTIFIER
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+
+  function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  }
+
   function openRawJson() {
-    setRawJsonInput(JSON.stringify(questions, null, 2));
+    // Use sample template structure if the question deck is entirely empty
+    const targetDataset = questions.length === 0 ? DEFAULT_JSON_TEMPLATES : questions;
+    setRawJsonInput(JSON.stringify(targetDataset, null, 2));
     setJsonError(null);
     setIsRawJsonOpen(true);
   }
@@ -107,6 +185,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
       setQuestions(healed);
       onChange(healed);
       setIsRawJsonOpen(false);
+      showToast("Banco de preguntas sincronizado y validado exitosamente");
     } catch (err: any) {
       setJsonError(err.message || "Error al procesar la cadena JSON. Asegúrese que el formato sea correcto.");
     }
@@ -123,7 +202,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
       const data: any = await resp.json();
       if (data.url) setImageUrl(data.url);
     } catch (err) {
-      alert("Error al subir imagen.");
+      showToast("Error al subir imagen", "error");
     } finally {
       setIsUploading(false);
     }
@@ -179,7 +258,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
 
     if (uiType === 'MCQ' || uiType === 'TF' || uiType === 'CODE') {
       if (correctIds.length === 0) {
-        alert("Debes seleccionar al menos una respuesta correcta.");
+        showToast("Debes seleccionar al menos una respuesta correcta", "error");
         return;
       }
       newQuestion = {
@@ -269,12 +348,9 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
               </Dialog>
             )}
 
-            {questions.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={openRawJson} className="gap-1 text-xs text-slate-500 hover:text-indigo-600 h-8">
-                <FileJson className="h-3.5 w-3.5" /> JSON Raw
-              </Button>
-            )}
-
+            <Button variant="ghost" size="sm" onClick={openRawJson} className="gap-1 text-xs text-slate-500 hover:text-indigo-600 h-8">
+              <FileJson className="h-3.5 w-3.5" /> JSON Raw
+            </Button>
             <Dialog open={isRawJsonOpen} onOpenChange={setIsRawJsonOpen}>
               <DialogContent className="max-w-3xl bg-white rounded-3xl shadow-2xl border-none flex flex-col max-h-[90vh] overflow-hidden p-0">
                 <div className="px-6 py-5 border-b bg-slate-50/50 flex justify-between items-center shrink-0">
@@ -286,43 +362,54 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                 <div className="flex-1 overflow-y-auto p-6 flex flex-col min-h-0">
                   <Tabs defaultValue="export" className="w-full h-full flex flex-col flex-1">
                     <TabsList className="grid grid-cols-2 max-w-md mb-4 border shadow-sm bg-slate-100 shrink-0">
-                      <TabsTrigger value="export" className="font-bold text-xs gap-2">📥 Ver y Copiar</TabsTrigger>
-                      <TabsTrigger value="edit" className="font-bold text-xs gap-2">✏️ Editar / Pegar</TabsTrigger>
+                      <TabsTrigger value="export" className="font-bold text-xs gap-2">
+                        <Eye className="h-3.5 w-3.5" /> Ver y Copiar
+                      </TabsTrigger>
+                      <TabsTrigger value="edit" className="font-bold text-xs gap-2">
+                        <Pencil className="h-3.5 w-3.5" /> Editar / Pegar
+                      </TabsTrigger>
                     </TabsList>
 
                     {/* EXPORT PANEL */}
                     <TabsContent value="export" className="flex-1 flex flex-col space-y-4 min-h-0">
-                      <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border leading-relaxed">
-                        💡 <strong>Modo Consulta:</strong> Copia este código estructurado para pasarlo a ChatGPT, Claude u otra IA para refinar las preguntas. Vuelve a la pestaña de "Editar" para inyectar la respuesta.
-                      </p>
+                      <div className="alert shadow-sm bg-slate-50 border-slate-200 flex items-start gap-3 py-3 rounded-xl">
+                        <Info className="h-5 w-5 text-indigo-500 shrink-0 mt-0.5" />
+                        <div className="text-xs text-slate-600 leading-relaxed">
+                          <strong>Modo Consulta:</strong> {questions.length === 0 ? "Hemos cargado una estructura modelo estandarizada con ejemplos de Fórmulas Math, Código y Preguntas IA." : "Copia este código estructurado para pasarlo a ChatGPT, Claude u otra IA."} Vuelve a la pestaña de Editar para guardar la respuesta generada.
+                        </div>
+                      </div>
                       
                       <div className="relative flex-1 group min-h-0 flex flex-col overflow-hidden rounded-2xl border border-slate-200">
                         <pre className="flex-1 w-full max-w-full bg-slate-950 text-green-400 font-mono text-[11px] p-5 overflow-auto shadow-inner select-all select:bg-indigo-500/40 whitespace-pre scrollbar-thin">
-                          {JSON.stringify(questions, null, 2)}
+                          {JSON.stringify(questions.length === 0 ? DEFAULT_JSON_TEMPLATES : questions, null, 2)}
                         </pre>
                         <Button 
                           size="sm" 
                           className="absolute top-3 right-3 opacity-90 bg-indigo-600 hover:bg-indigo-700 font-bold shadow-lg flex gap-1.5"
                           onClick={() => {
-                            navigator.clipboard.writeText(JSON.stringify(questions, null, 2));
-                            alert("¡JSON estructurado copiado al portapapeles!");
+                            const targetCopy = questions.length === 0 ? DEFAULT_JSON_TEMPLATES : questions;
+                            navigator.clipboard.writeText(JSON.stringify(targetCopy, null, 2));
+                            showToast("JSON estructurado copiado al portapapeles", "info");
                           }}
                         >
-                          Copiar Bloque
+                          <Copy className="h-3.5 w-3.5" /> Copiar Bloque
                         </Button>
                       </div>
                     </TabsContent>
 
                     {/* EDIT PANEL */}
                     <TabsContent value="edit" className="flex-1 flex flex-col space-y-4 min-h-0">
-                      <div className="bg-amber-50 text-amber-800 p-3.5 rounded-xl border border-amber-200 flex flex-col gap-1.5 text-xs leading-relaxed shadow-sm shrink-0">
-                        <div className="font-bold flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Motor de Auto-Curación Inteligente Activado</div>
-                        <div>Puedes pegar JSONs creados por IAs directamente. El sistema detectará si las preguntas tienen IDs simples (ej: 1, 2), duplicados o nulos, y <strong>les asignará automáticamente un UUID robusto</strong> de forma transparente para evitar bloqueos de guardado.</div>
+                      <div className="alert bg-amber-50 border-amber-200 text-amber-800 flex items-start gap-3 py-3 rounded-xl shadow-sm shrink-0">
+                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+                        <div className="text-xs leading-relaxed flex flex-col gap-0.5">
+                          <span className="font-bold">Motor de Auto-Curación Inteligente Activado</span>
+                          <span>Puedes pegar JSONs creados por IAs directamente. El sistema detectará automáticamente si las preguntas tienen IDs simples, nulos o duplicados, y les asignará un UUID criptográfico seguro de forma transparente.</span>
+                        </div>
                       </div>
 
                       {jsonError && (
-                        <div className="bg-red-50 text-red-700 p-3.5 rounded-xl border border-red-200 text-xs font-bold flex items-start gap-2 animate-in shake shrink-0">
-                          <HelpCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                        <div className="alert alert-error bg-red-50 border-red-200 text-red-700 flex items-start gap-3 py-3 rounded-xl shadow-sm shrink-0 font-bold text-xs animate-in shake">
+                          <HelpCircle className="h-5 w-5 mt-0.5 shrink-0" />
                           <div>{jsonError}</div>
                         </div>
                       )}
@@ -647,6 +734,23 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
           ))
         )}
       </div>
+
+      {/* FLOATING DAISYUI TOAST NOTIFIER */}
+      {toast && (
+        <div className="toast toast-top toast-end z-[9999] mt-20 mr-4 animate-in slide-in-from-top-5 fade-in duration-300">
+          <div className={cn(
+            "alert border-none text-xs font-black py-3 px-5 rounded-2xl shadow-2xl flex items-center gap-3 select-none border-l-4 bg-slate-950 text-white",
+            toast.type === 'success' && "border-l-emerald-500 text-emerald-300",
+            toast.type === 'error' && "border-l-rose-500 text-rose-300",
+            toast.type === 'info' && "border-l-indigo-400 text-indigo-200"
+          )}>
+            {toast.type === 'success' && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />}
+            {toast.type === 'error' && <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />}
+            {toast.type === 'info' && <Info className="h-4 w-4 shrink-0 text-indigo-300" />}
+            <span className="tracking-wide font-sans">{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
