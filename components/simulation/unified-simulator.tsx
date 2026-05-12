@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronLeft, Trophy, RefreshCw, CheckCircle2, XCircle, Loader2, Sparkles } from "lucide-react";
 import { evaluateOpenQuestion } from "@/lib/api/evaluator";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type AIResult = {
   score: number;
@@ -25,7 +27,7 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
   courseId: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   
   // State for async AI evaluations results
   const [aiEvaluations, setAiEvaluations] = useState<Record<string, AIResult>>({});
@@ -40,9 +42,13 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
     let earnedPoints = 0;
     questions.forEach(q => {
       if (q.type === 'MULTIPLE_CHOICE') {
-        if (userAnswers[q.id] === q.correct_id) earnedPoints += 100;
+        const correctAnswers = Array.isArray(q.correct_id) ? [...q.correct_id].sort() : [q.correct_id];
+        const userResp = userAnswers[q.id];
+        const userArr = Array.isArray(userResp) ? [...userResp].sort() : [userResp];
+        
+        const isMatch = JSON.stringify(correctAnswers) === JSON.stringify(userArr);
+        if (isMatch) earnedPoints += 100;
       } else if (q.type === 'AI_OPEN_QUESTION') {
-        // Add weight of AI Score
         earnedPoints += (aiEvaluations[q.id]?.score || 0);
       }
     });
@@ -121,11 +127,11 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
                 <Card key={q.id} className="border-l-4 border-l-indigo-500">
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start gap-2 mb-3">
-                      <h4 className="font-bold leading-tight">{idx+1}. {q.question_text}</h4>
+                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
                       <span className="font-mono text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded shadow-sm">IA SCORING: {evalRes?.score ?? 0}%</span>
                     </div>
-                    <div className="text-sm bg-slate-50 p-3 rounded border mb-3 italic text-slate-700">
-                      &quot;{userAnswers[q.id]}&quot;
+                    <div className="text-sm bg-slate-50 p-3 rounded border mb-3 italic text-slate-700 prose prose-sm max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{`"${userAnswers[q.id]}"`}</ReactMarkdown>
                     </div>
                     <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 flex gap-3">
                       <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
@@ -145,13 +151,18 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
               );
             }
             // MCQ Logic remains same but adapted to Schema labels
-            const isCorrect = userAnswers[q.id] === q.correct_id;
+            const isMultipleCorrect = Array.isArray(q.correct_id);
+            const correctSorted = isMultipleCorrect ? [...q.correct_id].sort() : [q.correct_id];
+            const currentAns = userAnswers[q.id];
+            const ansSorted = Array.isArray(currentAns) ? [...currentAns].sort() : [currentAns];
+            const isCorrect = JSON.stringify(correctSorted) === JSON.stringify(ansSorted);
+
             return (
               <Card key={q.id} className={cn("border-l-4", isCorrect ? "border-l-green-500" : "border-l-red-500")}>
                  <CardContent className="p-5">
                     <div className="flex justify-between items-start gap-2 mb-2">
-                      <h4 className="font-bold leading-tight">{idx+1}. {q.question_text}</h4>
-                      {isCorrect ? <CheckCircle2 className="text-green-600 h-5 w-5" /> : <XCircle className="text-red-600 h-5 w-5" />}
+                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
+                      {isCorrect ? <CheckCircle2 className="text-green-600 h-5 w-5 shrink-0" /> : <XCircle className="text-red-600 h-5 w-5 shrink-0" />}
                     </div>
                     {q.feedback_general && !isCorrect && (
                       <p className="text-xs text-slate-500 bg-slate-50 border p-2 rounded mt-2">💡 Tip: {q.feedback_general}</p>
@@ -192,8 +203,8 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
               {currentQuestion.type === 'AI_OPEN_QUESTION' ? 'Respuesta Abierta (IA)' : 'Selección Múltiple'}
             </span>
           </div>
-          <CardTitle className="text-xl md:text-2xl font-bold leading-tight text-slate-800">
-            {currentQuestion.question_text}
+          <CardTitle className="text-xl md:text-2xl font-bold leading-tight text-slate-800 prose max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentQuestion.question_text}</ReactMarkdown>
           </CardTitle>
         </CardHeader>
 
@@ -201,26 +212,54 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
           {/* Conditional Rendering per type */}
           {currentQuestion.type === 'MULTIPLE_CHOICE' ? (
             <div className="grid gap-3">
-              {currentQuestion.options.map((opt) => (
-                <button 
-                  key={opt.id}
-                  onClick={() => setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: opt.id }))}
-                  className={cn(
-                    "w-full text-left px-5 py-4 rounded-xl border-2 transition-all font-medium text-lg flex items-center gap-4 group",
-                    userAnswers[currentQuestion.id] === opt.id 
-                      ? "bg-blue-50 border-blue-600 text-blue-900 shadow-sm" 
-                      : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50"
-                  )}
-                >
-                  <div className={cn(
-                    "w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
-                    userAnswers[currentQuestion.id] === opt.id ? "border-blue-600 bg-blue-600" : "border-slate-300 group-hover:border-slate-400"
-                  )}>
-                    {userAnswers[currentQuestion.id] === opt.id && <div className="w-2 h-2 bg-white rounded-full" />}
-                  </div>
-                  {opt.text}
-                </button>
-              ))}
+              {(() => {
+                const isMulti = Array.isArray(currentQuestion.correct_id);
+                const currentSelected = userAnswers[currentQuestion.id] || (isMulti ? [] : null);
+                
+                const toggleOption = (optId: string) => {
+                  if (isMulti) {
+                    const currentArr = Array.isArray(currentSelected) ? currentSelected : [];
+                    const next = currentArr.includes(optId) 
+                      ? currentArr.filter((i: any) => i !== optId)
+                      : [...currentArr, optId];
+                    setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: next }));
+                  } else {
+                    setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: optId }));
+                  }
+                };
+
+                const isSelected = (optId: string) => {
+                   return isMulti 
+                    ? Array.isArray(currentSelected) && currentSelected.includes(optId)
+                    : currentSelected === optId;
+                };
+
+                return currentQuestion.options.map((opt) => (
+                  <button 
+                    key={opt.id}
+                    onClick={() => toggleOption(opt.id)}
+                    className={cn(
+                      "w-full text-left px-5 py-4 rounded-xl border-2 transition-all font-medium flex items-start gap-4 group",
+                      isSelected(opt.id)
+                        ? "bg-blue-50 border-blue-600 text-blue-900 shadow-sm" 
+                        : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-6 h-6 shrink-0 flex items-center justify-center transition-colors mt-0.5",
+                      isMulti ? "rounded-md border-2" : "rounded-full border-2",
+                      isSelected(opt.id) ? "border-blue-600 bg-blue-600" : "border-slate-300 group-hover:border-slate-400"
+                    )}>
+                      {isSelected(opt.id) && (
+                        isMulti ? <CheckCircle2 className="h-4 w-4 text-white" /> : <div className="w-2 h-2 bg-white rounded-full" />
+                      )}
+                    </div>
+                    <div className="prose prose-slate prose-sm leading-snug">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{opt.text}</ReactMarkdown>
+                    </div>
+                  </button>
+                ));
+              })()}
             </div>
           ) : (
             <div className="space-y-4">
@@ -254,23 +293,30 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
             <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
           </Button>
 
-          {currentQuestion.type === 'AI_OPEN_QUESTION' ? (
-            <Button 
-              disabled={!userAnswers[currentQuestion.id] || evaluating}
-              onClick={processOpenAnswer}
-              className="font-black px-8 bg-indigo-600 hover:bg-indigo-700 gap-2 shadow-md shadow-indigo-200"
-            >
-              {evaluating ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Evaluando con IA...</>
-              ) : (
-                <>Enviar y Avanzar <ChevronRight className="h-4 w-4" /></>
-              )}
-            </Button>
-          ) : (
-            currentIndex === questions.length - 1 ? (
+          {(() => {
+            const currentVal = userAnswers[currentQuestion.id];
+            const hasValue = Array.isArray(currentVal) ? currentVal.length > 0 : !!currentVal;
+            
+            if (currentQuestion.type === 'AI_OPEN_QUESTION') {
+              return (
+                <Button 
+                  disabled={!hasValue || evaluating}
+                  onClick={processOpenAnswer}
+                  className="font-black px-8 bg-indigo-600 hover:bg-indigo-700 gap-2 shadow-md shadow-indigo-200"
+                >
+                  {evaluating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Evaluando con IA...</>
+                  ) : (
+                    <>Enviar y Avanzar <ChevronRight className="h-4 w-4" /></>
+                  )}
+                </Button>
+              );
+            }
+
+            return currentIndex === questions.length - 1 ? (
               <Button 
                 className="font-black px-8 shadow-lg"
-                disabled={!userAnswers[currentQuestion.id]}
+                disabled={!hasValue}
                 onClick={() => setShowResults(true)}
               >
                 Finalizar Prueba <Trophy className="ml-2 h-4 w-4" />
@@ -278,13 +324,13 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
             ) : (
               <Button 
                 className="font-black px-8"
-                disabled={!userAnswers[currentQuestion.id]}
+                disabled={!hasValue}
                 onClick={() => setCurrentIndex(prev => prev + 1)}
               >
                 Siguiente <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
-            )
-          )}
+            );
+          })()}
         </CardFooter>
       </Card>
     </div>

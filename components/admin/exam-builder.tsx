@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
 import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Props {
   onChange: (questions: Question[]) => void;
@@ -29,7 +31,7 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
     { id: "a", text: "" },
     { id: "b", text: "" },
   ]);
-  const [correctId, setCorrectId] = useState("a");
+  const [correctIds, setCorrectIds] = useState<string[]>(["a"]);
 
   // AI State
   const [aiTopic, setAiTopic] = useState("");
@@ -41,12 +43,16 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
     let newQuestion: Question;
 
     if (qType === 'MULTIPLE_CHOICE') {
+      if (correctIds.length === 0) {
+        alert("Debes seleccionar al menos una respuesta correcta.");
+        return;
+      }
       newQuestion = {
         id: crypto.randomUUID(),
         type: 'MULTIPLE_CHOICE',
         question_text: qText,
         options: mcqOptions.filter(o => o.text.trim()),
-        correct_id: correctId,
+        correct_id: correctIds.length === 1 ? correctIds[0] : correctIds, // Supports both string & string[]
       };
     } else {
       newQuestion = {
@@ -70,6 +76,16 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
     setQText("");
     setAiTopic("");
     setAiConcepts("");
+    setCorrectIds(["a"]);
+    setMcqOptions([{ id: "a", text: "" }, { id: "b", text: "" }]);
+  }
+
+  function toggleCorrectId(id: string) {
+    setCorrectIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(x => x !== id) 
+        : [...prev, id]
+    );
   }
 
   function removeQuestion(id: string) {
@@ -129,12 +145,13 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                   {mcqOptions.map((opt, i) => (
                     <div key={i} className="flex gap-2 items-center">
                       <Button 
-                        variant={correctId === opt.id ? "default" : "outline"} 
+                        variant={correctIds.includes(opt.id) ? "default" : "outline"} 
                         size="icon"
-                        className="shrink-0"
-                        onClick={() => setCorrectId(opt.id)}
+                        className={`shrink-0 transition-all ${correctIds.includes(opt.id) ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                        onClick={() => toggleCorrectId(opt.id)}
+                        type="button"
                       >
-                        {correctId === opt.id ? <CheckCircle2 className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}
+                        {correctIds.includes(opt.id) ? <CheckCircle2 className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}
                       </Button>
                       <Input 
                         placeholder={`Opción ${opt.id.toUpperCase()}`} 
@@ -191,8 +208,17 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
 
       <div className="space-y-3">
         {questions.length === 0 ? (
-          <div className="text-center p-8 border-2 border-dashed rounded-xl bg-slate-50 text-muted-foreground text-sm">
-            No hay preguntas cargadas todavía. Haz click en &quot;Añadir Pregunta&quot; para empezar.
+          <div className="text-center p-10 border-2 border-dashed rounded-xl bg-slate-50/50 flex flex-col items-center">
+            <div className="h-12 w-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3">
+              <PlusCircle className="h-6 w-6" />
+            </div>
+            <h4 className="font-bold text-slate-900 mb-1">No hay preguntas todavía</h4>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+              Añade tu primera pregunta interactiva para habilitar el examen.
+            </p>
+            <Button size="lg" onClick={() => setIsOpen(true)} className="font-bold gap-2 shadow-lg shadow-primary/20 animate-bounce-once">
+              <PlusCircle className="h-5 w-5" /> ¡Empezar a Crear Preguntas!
+            </Button>
           </div>
         ) : (
           questions.map((q, idx) => (
@@ -210,7 +236,9 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                         {q.type === 'AI_OPEN_QUESTION' ? 'IA Open' : 'MCQ'}
                       </span>
                     </div>
-                    <p className="font-medium text-sm leading-snug text-slate-800">{q.question_text}</p>
+                    <div className="font-medium text-sm leading-snug text-slate-800 prose prose-slate prose-sm prose-p:leading-tight">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{q.question_text}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 shrink-0" onClick={() => removeQuestion(q.id)}>

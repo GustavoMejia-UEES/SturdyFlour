@@ -1,0 +1,1 @@
+ALTER TABLE `courses` ADD `theme_color` text DEFAULT '#2563eb';

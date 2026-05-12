@@ -146,7 +146,11 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                               </div>
                             </div>
                             <Link href={`/simulation/${test.id}`}>
-                              <Button size="sm" className="font-bold gap-2 group-hover:scale-105 transition-transform">
+                              <Button 
+                                size="sm" 
+                                className="font-bold gap-2 group-hover:scale-105 transition-transform shadow-sm text-white border-0" 
+                                style={{ backgroundColor: themeHex }}
+                              >
                                 Iniciar <PlayCircle className="h-4 w-4" />
                               </Button>
                             </Link>

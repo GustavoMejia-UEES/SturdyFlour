@@ -16,7 +16,7 @@ export const QuestionSchema = z.discriminatedUnion('type', [
     question_text: z.string(),
     image_url: z.string().url().optional(),
     options: z.array(MultipleChoiceOptionSchema),
-    correct_id: z.string(),
+    correct_id: z.union([z.string(), z.array(z.string())]),
     feedback_general: z.string().optional(),
   }),
   z.object({

@@ -95,7 +95,12 @@ export default async function DashboardPage() {
                 </CardContent>
                 <CardFooter className="bg-muted/20 pt-4">
                   <Link href={`/course/${course.id}`} className="w-full">
-                    <Button className="w-full justify-between group-hover:bg-primary" variant="default">
+                    <Button 
+                      className="w-full justify-between text-white shadow-sm border-0 transition-all" 
+                      style={{ backgroundColor: course.themeColor || '#2563eb', filter: 'brightness(1)', opacity: 0.95 }}
+                      onMouseOver={(e) => (e.currentTarget.style.opacity = '1')}
+                      onMouseOut={(e) => (e.currentTarget.style.opacity = '0.95')}
+                    >
                       Entrar al Módulo 
                       <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Button>

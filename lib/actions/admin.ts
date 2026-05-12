@@ -2,10 +2,10 @@
 
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '../db';
-import { profiles, courses, units, assessments } from '../db/schema';
+import { profiles, courses, units, assessments, likes, maxScores } from '../db/schema';
 import { CourseDefinitionSchema } from '../types/course';
 import { requireRole } from '../auth/session';
-import { eq } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 
 export async function uploadCourseDefinition(rawJson: string) {
   // ... existing full upload function ...
@@ -90,10 +90,8 @@ export async function addUnitToCourse(courseId: string, data: any) {
   const db = getDb(env.DB);
 
   try {
-    // Validate parent exists
-    const course = await db.query.courses.findFirst({
-      where: (c, { eq }) => eq(c.id, courseId)
-    });
+    // Validate parent exists using standard select to avoid missing-column errors
+    const [course] = await db.select({ id: courses.id }).from(courses).where(eq(courses.id, courseId)).limit(1);
     if (!course) throw new Error("Curso no encontrado");
 
     // Find current highest orderIndex for positioning
@@ -133,7 +131,34 @@ export async function deleteCourse(courseId: string) {
   const db = getDb(env.DB);
 
   try {
+    // 1. Find all associated Units
+    const unitRows = await db.select({ id: units.id }).from(units).where(eq(units.courseId, courseId)).all();
+    const unitIds = unitRows.map(u => u.id);
+
+    if (unitIds.length > 0) {
+      // 2. Find all associated Assessments
+      const assessRows = await db.select({ id: assessments.id })
+        .from(assessments)
+        .where(inArray(assessments.unitId, unitIds))
+        .all();
+      const assessIds = assessRows.map(a => a.id);
+
+      if (assessIds.length > 0) {
+        // 3. Wipe lower-level dependent interactions
+        await db.delete(likes).where(inArray(likes.assessmentId, assessIds));
+        await db.delete(maxScores).where(inArray(maxScores.assessmentId, assessIds));
+        
+        // 4. Wipe Assessments themselves
+        await db.delete(assessments).where(inArray(assessments.id, assessIds)); 
+      }
+      
+      // 5. Wipe Units
+      await db.delete(units).where(inArray(units.id, unitIds));
+    }
+
+    // 6. Wipe the main course node
     await db.delete(courses).where(eq(courses.id, courseId));
+    
     return { success: true };
   } catch (e: any) {
     throw new Error(`Fallo al eliminar: ${e.message}`);
