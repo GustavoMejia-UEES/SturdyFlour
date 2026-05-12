@@ -57,7 +57,7 @@ export async function uploadCourseDefinition(rawJson: string) {
 /**
  * Creates just the empty shell of a course.
  */
-export async function createCourse(data: { code: string, name: string, instructor: string, gradeLevel?: string }) {
+export async function createCourse(data: { code: string, name: string, instructor: string, gradeLevel?: string, themeColor?: string }) {
   await requireRole(['ADMIN', 'EDITOR']);
   const env = getRequestContext().env;
   const db = getDb(env.DB);
@@ -68,6 +68,7 @@ export async function createCourse(data: { code: string, name: string, instructo
       name: data.name,
       instructor: data.instructor,
       gradeLevel: data.gradeLevel || null,
+      themeColor: data.themeColor || '#2563eb',
     }).returning({ id: courses.id });
     
     return { success: true, courseId: res.id };

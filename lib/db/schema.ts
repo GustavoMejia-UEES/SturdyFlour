@@ -19,6 +19,7 @@ export const courses = sqliteTable('courses', {
   name: text('name').notNull(),
   instructor: text('instructor').notNull(),
   gradeLevel: text('grade_level'),
+  themeColor: text('theme_color').default('#2563eb'), // Default tailwind blue-600
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

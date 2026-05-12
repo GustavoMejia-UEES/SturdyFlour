@@ -46,23 +46,39 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
     return { ...u, assessments: tests };
   }));
 
+  const themeHex = course.themeColor || '#2563eb';
+
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col">
       <Navbar />
       
       {/* Hero Banner for Course */}
-      <div className="bg-slate-900 text-white py-12 shadow-inner">
-        <div className="container mx-auto px-4">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors mb-6">
+      <div 
+        className="relative overflow-hidden text-white py-16 shadow-inner"
+        style={{ background: `linear-gradient(135deg, #0f172a 0%, ${themeHex}aa 100%), #0f172a` }}
+      >
+        {/* Aesthetic glowing circle using the dynamic color */}
+        <div 
+          className="absolute top-0 right-0 h-64 w-64 rounded-full blur-[120px] opacity-40 pointer-events-none translate-x-1/3 -translate-y-1/3"
+          style={{ backgroundColor: themeHex }}
+        />
+
+        <div className="container mx-auto px-4 relative z-10">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-300 hover:text-white text-sm transition-colors mb-6 font-medium">
             <ArrowLeft className="h-4 w-4" /> Catálogo General
           </Link>
           <div className="flex gap-3 mb-4">
-            <span className="bg-blue-600 px-3 py-1 rounded text-xs font-bold font-mono tracking-wide uppercase shadow">{course.code}</span>
-            {course.gradeLevel && <span className="bg-slate-700 px-3 py-1 rounded text-xs font-medium">{course.gradeLevel}</span>}
+            <span 
+              className="px-3 py-1 rounded text-xs font-extrabold font-mono tracking-wide uppercase shadow-sm border border-white/10"
+              style={{ backgroundColor: themeHex }}
+            >
+              {course.code}
+            </span>
+            {course.gradeLevel && <span className="bg-slate-800/80 px-3 py-1 rounded text-xs font-medium border border-white/5">{course.gradeLevel}</span>}
           </div>
-          <h1 className="text-4xl font-black tracking-tight mb-2">{course.name}</h1>
-          <p className="text-slate-400 text-lg flex items-center gap-2">
-             Docente: <span className="text-white font-medium">{course.instructor}</span>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-3 drop-shadow-sm">{course.name}</h1>
+          <p className="text-slate-200 text-lg flex items-center gap-2 drop-shadow-sm">
+             Docente: <span className="text-white font-bold border-b border-white/30 pb-0.5">{course.instructor}</span>
           </p>
         </div>
       </div>
@@ -71,7 +87,7 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
         <div className="md:col-span-2 space-y-8">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <ListChecks className="text-blue-600 h-6 w-6" /> Malla de Contenidos
+              <ListChecks className="h-6 w-6" style={{ color: themeHex }} /> Malla de Contenidos
             </h2>
           </div>
 
@@ -83,11 +99,17 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
             <div className="space-y-12 border-l-2 border-slate-200 pl-6 ml-3 relative">
               {unitsWithAssessments.map((unit, idx) => (
                 <div key={unit.id} className="relative">
-                  {/* Timeline dot */}
-                  <div className="absolute -left-[33px] top-1 h-6 w-6 rounded-full border-4 border-white bg-blue-600 shadow-sm" />
+                  {/* Timeline dot with dynamic color */}
+                  <div 
+                    className="absolute -left-[33px] top-1 h-6 w-6 rounded-full border-4 border-white shadow-sm" 
+                    style={{ backgroundColor: themeHex }}
+                  />
                   
                   <div className="mb-4">
-                    <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">
+                    <span 
+                      className="text-xs font-bold uppercase tracking-widest"
+                      style={{ color: themeHex }}
+                    >
                       Unidad #{idx + 1} ({unit.customId})
                     </span>
                     <h3 className="text-xl font-extrabold text-slate-800">{unit.title}</h3>
@@ -98,14 +120,14 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                       <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded">No hay evaluaciones programadas.</div>
                     ) : (
                       unit.assessments.map((test) => (
-                        <Card key={test.id} className="hover:border-blue-400 transition-all duration-200 border bg-white group shadow-sm hover:shadow">
+                        <Card key={test.id} className="hover:border-slate-300 transition-all duration-200 border bg-white group shadow-sm hover:shadow">
                           <CardContent className="p-5 flex items-center justify-between">
                             <div className="flex items-start gap-4">
-                              <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors">
+                              <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 transition-colors" style={{ backgroundColor: `${themeHex}10` }}>
                                 {test.type === 'GRADED' ? (
-                                  <Target className="h-6 w-6 text-orange-600" />
+                                  <Target className="h-6 w-6" style={{ color: themeHex }} />
                                 ) : (
-                                  <BookOpen className="h-6 w-6 text-blue-600" />
+                                  <BookOpen className="h-6 w-6" style={{ color: themeHex }} />
                                 )}
                               </div>
                               <div>

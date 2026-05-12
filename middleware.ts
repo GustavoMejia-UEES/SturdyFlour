@@ -1,29 +1,25 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_ROUTES = ['/', '/login'];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public asset fetching and next internals inherently
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api/auth') || pathname.includes('.')) {
+  // Skip statics and next internal requests immediately
+  if (pathname.startsWith('/_next') || pathname.includes('.')) {
     return NextResponse.next();
   }
 
-  // Check for public routes
-  if (PUBLIC_ROUTES.includes(pathname)) {
-    return NextResponse.next();
-  }
+  // STRICTLY PROTECTED ROUTES: ONLY ADMIN/IMPORT AREA REQUIRES AUTH FOR VIEWING
+  const isProtected = pathname.startsWith('/admin');
 
-  // Verify if the user is authed via local token existence
-  const token = request.cookies.get('auth_token')?.value;
-
-  if (!token) {
-    // Unauthenticated user redirected to internal login portal
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+  if (isProtected) {
+    const token = request.cookies.get('auth_token')?.value;
+    if (!token) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('from', pathname); // help redirect back after login
+      return NextResponse.redirect(url);
+    }
   }
 
   return NextResponse.next();

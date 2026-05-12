@@ -19,8 +19,11 @@ export function CreateCourseDialog() {
     code: "",
     name: "",
     instructor: "",
-    gradeLevel: ""
+    gradeLevel: "",
+    themeColor: "#2563eb" // initial blue
   });
+
+  const presetColors = ["#2563eb", "#16a34a", "#ea580c", "#7c3aed", "#db2777", "#0f172a"];
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +36,7 @@ export function CreateCourseDialog() {
     try {
       const res = await createCourse(form);
       setIsOpen(false);
-      setForm({ code: "", name: "", instructor: "", gradeLevel: "" });
+      setForm({ code: "", name: "", instructor: "", gradeLevel: "", themeColor: "#2563eb" });
       router.push(`/course/${res.courseId}`);
       router.refresh();
     } catch (err: any) {
@@ -60,9 +63,36 @@ export function CreateCourseDialog() {
         <form onSubmit={onSubmit} className="space-y-4 pt-2">
           {error && <div className="text-xs p-2 bg-red-50 text-red-600 rounded border border-red-100">{error}</div>}
           
-          <div className="grid gap-2">
-            <Label htmlFor="code">Código Único (Ej: MATH-101)*</Label>
-            <Input id="code" placeholder="MAT-101" value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} disabled={loading} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="code">Código Único*</Label>
+              <Input id="code" placeholder="MAT-101" value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})} disabled={loading} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="themeColor">Estilo Visual</Label>
+              <div className="flex gap-2 items-center">
+                <input 
+                  type="color" 
+                  id="themeColor" 
+                  value={form.themeColor}
+                  onChange={e => setForm({...form, themeColor: e.target.value})}
+                  className="h-9 w-full rounded cursor-pointer border p-0.5 bg-white"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pb-1">
+             {presetColors.map(c => (
+               <button 
+                 key={c}
+                 type="button"
+                 onClick={() => setForm({...form, themeColor: c})}
+                 className={`w-6 h-6 rounded-full border-2 transition-all ${form.themeColor === c ? 'scale-110 ring-2 ring-offset-2 ring-slate-400 border-white' : 'border-transparent'}`}
+                 style={{ backgroundColor: c }}
+               />
+             ))}
           </div>
 
           <div className="grid gap-2">
