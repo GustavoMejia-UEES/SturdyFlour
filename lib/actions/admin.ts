@@ -5,6 +5,7 @@ import { getDb } from '../db';
 import { profiles, courses, units, assessments } from '../db/schema';
 import { CourseDefinitionSchema } from '../types/course';
 import { requireRole } from '../auth/session';
+import { eq } from 'drizzle-orm';
 
 export async function uploadCourseDefinition(rawJson: string) {
   // ... existing full upload function ...
