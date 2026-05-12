@@ -1,52 +1,54 @@
-# 🏗️ Arquitectura Técnica y Stack Tecnológico
+# 🏗️ Arquitectura Técnica y Stack Tecnológico: SturdyFlour
 
-Este documento desglosa las decisiones de ingeniería detrás de la infraestructura de alto rendimiento utilizada en este centro de mensajería.
-
----
-
-## ⚡ El Núcleo: Bun 1.1 (The Speed Demon)
-Todo el proyecto (tanto frontend como backend) corre bajo el entorno de ejecución de **Bun**. 
-Hemos eliminado Node.js de la ecuación de producción por completo.
-- **Instalación**: 10x más rápida que npm.
-- **Ejecución Nativa de TS**: El backend corre directamente archivos `.ts` sin necesidad de transpilar (`tsc` o `babel`), eliminando fricción en el build.
-- **File IO Extremo**: Usamos `Bun.file()` para entregar el frontend estático, lo cual es hasta 5x más rápido que un middleware de Express en Node.
+Este documento documenta el motor de ingeniería real sobre el que corre SturdyFlour. Hemos construido un ecosistema 100% Cloud-Native aprovechando la red "Edge" global para garantizar latencia cero y escalado infinito.
 
 ---
 
-## ⚙️ Backend: ElysiaJS (Framework Ultra-Rápido)
-Elysia es un framework diseñado específicamente para Bun, aprovechando el motor HTTP nativo de alta velocidad.
+## ⚡ El Núcleo: Next.js App Router en Cloudflare Edge
 
-### Conceptos Arquitectónicos Clave:
-1. **Single Source Server**: El servidor no solo maneja API y WebSockets, sino que en Producción sirve los activos compilados de Next.js automáticamente. Esto simplifica el despliegue (1 solo contenedor Docker).
-2. **WebSockets Nativos**: A diferencia de librerías pesadas, Elysia maneja WebSocket hooks integrados, procesando miles de conexiones concurrentes con una huella de memoria mínima.
-3. **Transacciones Atómicas**: Cada mensaje entrante desde Webhooks de N8N abre una conexión segura al pool de PostgreSQL, inserta el registro y actualiza la sesión en una única unidad de trabajo (`BEGIN / COMMIT`).
+SturdyFlour no corre en un servidor tradicional (VPS). Todo el backend y frontend corre en miles de servidores distribuidos alrededor del mundo usando el ecosistema de **Cloudflare Workers**.
 
----
-
-## 🖼️ Frontend: Next.js 15 (React Framework)
-Se eligió Next.js en modo **"Output Static Export"**.
-
-### Razones del Static Export:
-- **Seguridad**: Los archivos JS y HTML se generan en el build; no hay código de Node.js dinámico ejecutándose en el servidor del frontend que pueda ser hackeado.
-- **Velocidad**: Carga instantánea.
-- **Desacoplamiento**: El frontend es agnóstico de dónde está corriendo la API, resolviendo las rutas relativas de forma dinámica (`window.location`).
-
-### Gestión de Estado: Zustand
-En lugar de Redux (demasiado verboso) o Context API (provoca re-renders masivos), usamos **Zustand**.
-- **Stores Ligeros**: `useChatStore.ts` contiene las sesiones y mensajes.
-- **Prevención de Stale State**: Usamos `useChatStore.getState()` dentro de los eventos del WebSocket para asegurar que el código en tiempo real siempre lea los datos vivos, incluso fuera del ciclo de renders de React.
+### Decisiones Clave:
+1. **React Server Components (RSC)**: El 80% de la lógica de datos (Auth, Listado de Cursos) se computa directamente en el Edge node más cercano al usuario, enviando solo HTML puro al cliente.
+2. **Runtime: Edge**: En lugar de Node.js, forzamos `export const runtime = 'edge';` para que las APIs carguen en < 50ms y nunca sufran de "Cold Starts".
 
 ---
 
-## 📊 Base de Datos: PostgreSQL + PG Pool
-Usamos el driver `pg` nativo con pooling de conexiones activo para asegurar resiliencia.
-- **Patrón UPSERT**: Para contadores de lectura (`chat_read_status`), usamos `INSERT ... ON CONFLICT DO UPDATE` para garantizar que nunca falle una escritura por registros faltantes.
+## 💾 Almacenamiento & Persistencia Distribuida
+
+Hemos evitado las bases de datos SQL pesadas centralizadas. En su lugar, usamos la suite de storage nativa de Cloudflare:
+
+### 1. Base de Datos: Cloudflare D1 (SQLite Serverless)
+D1 provee consistencia global con SQL estándar, integrado nativamente en el motor de Cloudflare.
+- **ORM**: Usamos **Drizzle ORM** para la máxima eficiencia tipada. A diferencia de Prisma, Drizzle no levanta motores secundarios, es código puro JS optimizado para el Edge.
+
+### 2. Archivos (PDFs & Multimedia): Cloudflare R2
+R2 es una réplica compatible con AWS S3, pero con **Zero Egress Fees** (0 Costo por tráfico de descarga).
+- Almacenamos los PDFs del repositorio de forma segura.
+- Las APIs sirven los archivos mediante streams directos (`ReadableStream`) sin pasar por disco temporal, maximizando la memoria RAM (limitada a 128MB en Workers).
 
 ---
 
-## 🐳 Infraestructura: Docker Multi-Stage (Alpine)
-Nuestra imagen de Docker es híbrida y ultra-optimizada:
-1. **Fase 1 (Builder)**: Instala dependencias con Bun, compila el CSS y JS estático del frontend.
-2. **Fase 2 (Production)**: Toma una imagen limpia de Alpine Linux con Bun, copia SOLO los archivos finales necesarios y levanta el backend.
-- **Peso**: Extremadamente liviano.
-- **Procesos**: Utiliza `dumb-init` para el manejo adecuado de señales de sistema Unix, garantizando que Docker pueda detener o reiniciar el contenedor limpiamente sin dejar procesos zombie.
+## 🧠 Inteligencia Artificial (Brain Center)
+
+Para la evaluación dinámica de simulaciones, no usamos contenedores de IA pesados.
+Utilizamos la API oficial de **Google Generative AI (Gemini 1.5 Flash)** por dos razones fundamentales:
+1. **Velocidad Extrema**: Flash devuelve correcciones de preguntas abiertas en menos de 2 segundos.
+2. **Context Window Gigante**: Permite que le enviemos rúbricas enteras de un examen sin degradar el rendimiento.
+
+---
+
+## 🔐 Autenticación y Criptografía del Edge
+
+Implementamos un sistema de autenticación artesanal sin dependencias externas pesadas:
+- **Hashing**: Usamos la API nativa de navegadores `crypto.subtle.pbkdf2` (Nativa en Node y Edge) para hashear contraseñas con 100,000 iteraciones.
+- **Sesiones**: JWT (JSON Web Tokens) auto-contenidos y firmados asimétricamente almacenados en Cookies Seguras (HttpOnly).
+
+---
+
+## 📦 Flujo de Despliegue (CI/CD)
+
+El proyecto utiliza GitHub Actions implícito con Cloudflare Pages:
+1. El código se pushea a `main`.
+2. `next-on-pages` compila la aplicación traduciendo las API Routes de Next.js en funciones Worker (`.js`).
+3. El bundle se despliega automáticamente a la red global en < 90 segundos.
