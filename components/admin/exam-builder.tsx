@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
-import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2 } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { UnifiedSimulator } from "../simulation/unified-simulator";
 
 interface Props {
   onChange: (questions: Question[]) => void;
@@ -37,6 +38,33 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
   const [aiTopic, setAiTopic] = useState("");
   const [aiConcepts, setAiConcepts] = useState("");
 
+  // New Feature States
+  const [imageUrl, setImageUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const resp = await fetch('/api/storage/upload', { method: 'POST', body: formData });
+      const data: any = await resp.json();
+      if (data.url) setImageUrl(data.url);
+    } catch (err) {
+      alert("Error al subir imagen.");
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  function insertCodeSnippet() {
+    const snippet = "\n```javascript\n// Escribe tu código aquí\n\n```\n";
+    setQText(prev => prev + snippet);
+  }
+
   function handleSaveQuestion() {
     if (!qText.trim()) return;
 
@@ -51,14 +79,16 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
         id: crypto.randomUUID(),
         type: 'MULTIPLE_CHOICE',
         question_text: qText,
+        image_url: imageUrl || undefined,
         options: mcqOptions.filter(o => o.text.trim()),
-        correct_id: correctIds.length === 1 ? correctIds[0] : correctIds, // Supports both string & string[]
+        correct_id: correctIds.length === 1 ? correctIds[0] : correctIds, 
       };
     } else {
       newQuestion = {
         id: crypto.randomUUID(),
         type: 'AI_OPEN_QUESTION',
         question_text: qText,
+        image_url: imageUrl || undefined,
         ai_context: {
           topic: aiTopic || "General",
           expected_concepts: aiConcepts.split(",").map(c => c.trim()).filter(c => c),
@@ -78,6 +108,7 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
     setAiConcepts("");
     setCorrectIds(["a"]);
     setMcqOptions([{ id: "a", text: "" }, { id: "b", text: "" }]);
+    setImageUrl("");
   }
 
   function toggleCorrectId(id: string) {
@@ -101,12 +132,38 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
           <AlignLeft className="h-5 w-5 text-primary" /> Banco de Preguntas ({questions.length})
         </h3>
         
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="font-bold gap-2 shadow-sm">
-              <PlusCircle className="h-4 w-4" /> Añadir Pregunta
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          {questions.length > 0 && (
+            <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="font-bold gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                  <PlaySquare className="h-4 w-4" /> Previsualizar
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto bg-slate-50 flex flex-col p-0">
+                <DialogHeader className="p-6 pb-2 shrink-0">
+                  <DialogTitle className="text-indigo-900 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" /> Simulación de Prueba (Modo Preview)
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-100">
+                   <UnifiedSimulator 
+                     questions={questions} 
+                     courseName="Vista Previa Editor" 
+                     testTitle="Examen en Construcción" 
+                     courseId="preview"
+                   />
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="font-bold gap-2 shadow-sm">
+                <PlusCircle className="h-4 w-4" /> Añadir Pregunta
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-xl bg-white">
             <DialogHeader>
               <DialogTitle>Configurar Nueva Pregunta</DialogTitle>
@@ -129,14 +186,44 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <Label>Enunciado / Texto de la Pregunta</Label>
+               <div className="grid gap-2">
+                <div className="flex justify-between items-center">
+                  <Label>Enunciado / Texto de la Pregunta</Label>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-slate-500" onClick={insertCodeSnippet} type="button">
+                    <Code className="h-3.5 w-3.5 mr-1" /> Insertar Código
+                  </Button>
+                </div>
                 <Textarea 
                   placeholder="Ej: ¿Cómo se define una variable global?"
                   value={qText}
                   onChange={(e) => setQText(e.target.value)}
-                  className="min-h-[80px]"
+                  className="min-h-[80px] font-mono text-sm"
                 />
+              </div>
+
+              <div className="grid gap-2 border-y py-3 my-1">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Imagen de Contexto (Opcional)</Label>
+                  {imageUrl && <span className="text-[10px] font-bold text-green-600">¡Subida!</span>}
+                </div>
+                <div className="flex gap-3 items-center">
+                  <div className="relative flex-1">
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                      disabled={isUploading}
+                      className="cursor-pointer text-xs"
+                    />
+                    {isUploading && <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-3 text-muted-foreground" />}
+                  </div>
+                  {imageUrl && (
+                    <div className="h-10 w-10 border rounded overflow-hidden shrink-0 bg-slate-50">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={imageUrl} alt="preview" className="object-cover h-full w-full" />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {qType === 'MULTIPLE_CHOICE' ? (
@@ -204,6 +291,7 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="space-y-3">

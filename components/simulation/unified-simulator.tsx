@@ -206,6 +206,15 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
           <CardTitle className="text-xl md:text-2xl font-bold leading-tight text-slate-800 prose max-w-none">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentQuestion.question_text}</ReactMarkdown>
           </CardTitle>
+          {currentQuestion.image_url && (
+            <div className="mt-4 rounded-xl overflow-hidden border bg-black/5 max-h-[300px] flex justify-center">
+              <img 
+                src={currentQuestion.image_url} 
+                alt="Ilustración de pregunta" 
+                className="object-contain max-h-[300px] w-auto"
+              />
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="flex-1 py-8 px-6 md:px-10">

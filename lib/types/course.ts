@@ -14,7 +14,7 @@ export const QuestionSchema = z.discriminatedUnion('type', [
     id: z.string(),
     type: z.literal('MULTIPLE_CHOICE'),
     question_text: z.string(),
-    image_url: z.string().url().optional(),
+    image_url: z.string().optional(),
     options: z.array(MultipleChoiceOptionSchema),
     correct_id: z.union([z.string(), z.array(z.string())]),
     feedback_general: z.string().optional(),
@@ -23,7 +23,7 @@ export const QuestionSchema = z.discriminatedUnion('type', [
     id: z.string(),
     type: z.literal('AI_OPEN_QUESTION'),
     question_text: z.string(),
-    image_url: z.string().url().optional(),
+    image_url: z.string().optional(),
     ai_context: z.object({
       topic: z.string(),
       expected_concepts: z.array(z.string()),

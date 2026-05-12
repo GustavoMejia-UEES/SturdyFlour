@@ -30,19 +30,26 @@ export default async function Home() {
           Procesamiento instantáneo de PDFs con IA avanzada de Gemini. Domina tus materias practicando con exámenes a tu medida.
         </p>
 
-        <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
+        <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
           {isSignedIn ? (
             <Link href="/dashboard">
-              <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group">
-                <GraduationCap className="group-hover:scale-110 transition-transform" /> Entrar al Sistema
+              <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group w-full sm:w-auto">
+                <GraduationCap className="group-hover:scale-110 transition-transform" /> Ir al Catálogo
               </Button>
             </Link>
           ) : (
-            <Link href="/login">
-              <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group">
-                Iniciar Sesión Ahora <BrainCircuit className="group-hover:rotate-12 transition-transform" />
-              </Button>
-            </Link>
+            <>
+              <Link href="/dashboard">
+                <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group w-full sm:w-auto">
+                  <GraduationCap className="group-hover:scale-110 transition-transform" /> Entrar como Invitado
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="lg" variant="outline" className="h-14 px-10 text-lg font-bold rounded-2xl border-primary/20 hover:bg-primary/5 text-primary gap-3 group w-full sm:w-auto bg-white/50 backdrop-blur">
+                  Administración <BrainCircuit className="group-hover:rotate-12 transition-transform opacity-70" />
+                </Button>
+              </Link>
+            </>
           )}
         </div>
 
