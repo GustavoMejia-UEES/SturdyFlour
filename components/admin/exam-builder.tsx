@@ -466,19 +466,19 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
 
               <div className="p-3 rounded-lg bg-slate-50 border space-y-2">
                 <div className="font-bold text-xs uppercase text-slate-400">Fórmula en Bloque (línea separada)</div>
-                <code className="text-pink-600 block font-mono bg-white p-2 rounded border">$$ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$</code>
+                <code className="text-pink-600 block font-mono bg-white p-2 rounded border">{"$$ x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} $$"}</code>
                 <p className="text-xs text-slate-500">Usa doble signo de dólar para que ocupe todo el ancho y se centre.</p>
               </div>
 
               <div className="mt-2 pt-2 border-t">
                 <p className="font-bold mb-1 text-xs text-slate-500">Símbolos Comunes:</p>
                 <ul className="grid grid-cols-2 gap-2 text-xs font-mono">
-                  <li>Fracción: <span className="text-pink-600">\frac&#123;a&#125;&#123;b&#125;</span></li>
-                  <li>Raíz: <span className="text-pink-600">\sqrt&#123;x&#125;</span></li>
-                  <li>Potencia: <span className="text-pink-600">x^2</span></li>
-                  <li>Subíndice: <span className="text-pink-600">x_i</span></li>
-                  <li>Suma: <span className="text-pink-600">\sum</span></li>
-                  <li>Integral: <span className="text-pink-600">\int</span></li>
+                  <li>Fracción: <span className="text-pink-600">{"\\frac{a}{b}"}</span></li>
+                  <li>Raíz: <span className="text-pink-600">{"\\sqrt{x}"}</span></li>
+                  <li>Potencia: <span className="text-pink-600">{"x^2"}</span></li>
+                  <li>Subíndice: <span className="text-pink-600">{"x_i"}</span></li>
+                  <li>Suma: <span className="text-pink-600">{"\\sum"}</span></li>
+                  <li>Integral: <span className="text-pink-600">{"\\int"}</span></li>
                 </ul>
               </div>
             </div>
