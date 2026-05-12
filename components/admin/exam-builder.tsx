@@ -22,9 +22,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface Props {
   onChange: (questions: Question[]) => void;
   initialQuestions?: Question[];
+  themeColor?: string;
 }
 
-export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
+export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#2563eb" }: Props) {
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   
   // Dialog state for new question creation
@@ -180,43 +181,42 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-bold tracking-tight flex items-center gap-2">
-          <AlignLeft className="h-5 w-5 text-primary" /> Banco de Preguntas ({questions.length})
-        </h3>
-        
-        <div className="flex gap-2">
-          {questions.length > 0 && (
-            <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="font-bold gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
-                  <PlaySquare className="h-4 w-4" /> Previsualizar
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto bg-slate-50 flex flex-col p-0">
-                <DialogHeader className="p-6 pb-2 shrink-0">
-                  <DialogTitle className="text-indigo-900 flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" /> Simulación de Prueba (Modo Preview)
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-100">
-                   <UnifiedSimulator 
-                     questions={questions} 
-                     courseName="Vista Previa Editor" 
-                     testTitle="Examen en Construcción" 
-                     courseId="preview"
-                   />
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+        <div className="flex items-center gap-2 justify-between mb-5">
+          <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
+            <AlignLeft className="h-4 w-4" /> Banco de Preguntas ({questions.length})
+          </h3>
+          <div className="flex items-center gap-2">
+            {questions.length > 0 && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1 text-xs border-blue-200 text-blue-700 hover:bg-blue-50 h-8">
+                    <PlaySquare className="h-3.5 w-3.5" /> Previsualizar
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto bg-slate-50 flex flex-col p-0">
+                  <DialogHeader className="p-6 pb-2 shrink-0">
+                    <DialogTitle className="text-indigo-900 flex items-center gap-2 font-black">
+                      <Sparkles className="h-5 w-5" /> Simulación de Prueba (Modo Preview)
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-100">
+                     <UnifiedSimulator 
+                       questions={questions} 
+                       courseName="Vista Previa Editor" 
+                       testTitle="Examen en Construcción" 
+                       courseId="preview"
+                     />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            <Button size="sm" onClick={() => setIsOpen(true)} className="gap-1 shadow-sm h-8 font-bold" style={{ backgroundColor: themeColor }}>
+              <PlusCircle className="h-3.5 w-3.5" /> Añadir Pregunta
+            </Button>
+          </div>
+        </div>
 
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="font-bold gap-2 shadow-sm">
-                <PlusCircle className="h-4 w-4" /> Añadir Pregunta
-              </Button>
-            </DialogTrigger>
           <DialogContent className="max-w-7xl w-[95vw] h-[90vh] p-0 overflow-hidden bg-white flex flex-col border-none shadow-2xl rounded-3xl">
             {/* Derive temporary preview object dynamically */}
             {(() => {
@@ -484,8 +484,6 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
             </div>
           </DialogContent>
         </Dialog>
-        </div>
-      </div>
 
       <div className="space-y-3">
         {questions.length === 0 ? (
@@ -497,39 +495,63 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
               Añade tu primera pregunta interactiva para habilitar el examen.
             </p>
-            <Button size="lg" onClick={() => setIsOpen(true)} className="font-bold gap-2 shadow-lg shadow-primary/20 animate-bounce-once">
+            <Button size="lg" onClick={() => setIsOpen(true)} className="font-bold gap-2 shadow-lg animate-bounce-once" style={{ backgroundColor: themeColor }}>
               <PlusCircle className="h-5 w-5" /> ¡Empezar a Crear Preguntas!
             </Button>
           </div>
         ) : (
           questions.map((q, idx) => (
-            <Card key={q.id} className="shadow-sm hover:border-primary/50 transition-colors">
-              <CardContent className="p-4 flex items-start justify-between gap-4">
-                <div className="flex gap-3">
-                  <div className="h-8 w-8 bg-slate-100 rounded flex items-center justify-center text-sm font-bold shrink-0">
-                    {idx + 1}
-                  </div>
-                  <div>
-                    <div className="flex gap-2 mb-1">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase border ${
-                        q.type === 'AI_OPEN_QUESTION' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}>
-                        {q.type === 'AI_OPEN_QUESTION' ? 'IA Open' : 'MCQ'}
-                      </span>
-                    </div>
-                    <div className="font-medium text-sm leading-snug text-slate-800 prose prose-slate prose-sm prose-p:leading-tight">
-                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{q.question_text}</ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 shrink-0" onClick={() => removeQuestion(q.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+            <QuestionBankItem key={q.id} q={q} idx={idx} onRemove={() => removeQuestion(q.id)} />
           ))
         )}
       </div>
     </div>
+  );
+}
+
+function QuestionBankItem({ q, idx, onRemove }: { q: Question, idx: number, onRemove: () => void }) {
+  const [expanded, setExpanded] = React.useState(false);
+
+  return (
+    <Card className="shadow-sm hover:border-primary/50 transition-colors relative overflow-hidden group">
+      <CardContent className="p-4 flex items-start justify-between gap-4">
+        <div className="flex-1 flex gap-3">
+          <div className="h-7 w-7 bg-slate-100 rounded-md flex items-center justify-center text-xs font-bold shrink-0 border">
+            {idx + 1}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase border tracking-wide ${
+                q.type === 'AI_OPEN_QUESTION' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+              }`}>
+                {q.type === 'AI_OPEN_QUESTION' ? 'Respuesta Abierta' : 'Multi-Opción'}
+              </span>
+              <button 
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                className="text-[10px] font-bold text-blue-600 hover:underline uppercase ml-auto"
+              >
+                {expanded ? 'Contraer [-]' : 'Expandir [+]'}
+              </button>
+            </div>
+
+            <div className={cn(
+              "relative font-medium text-sm leading-snug text-slate-800 prose prose-slate prose-sm prose-p:leading-tight max-w-full",
+              !expanded && "max-h-[80px] overflow-hidden"
+            )}>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
+                {q.question_text}
+              </ReactMarkdown>
+              {!expanded && (
+                <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+              )}
+            </div>
+          </div>
+        </div>
+        <Button variant="ghost" size="icon" className="text-slate-300 hover:text-red-600 hover:bg-red-50 shrink-0 h-8 w-8" onClick={onRemove}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

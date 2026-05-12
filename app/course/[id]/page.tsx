@@ -184,7 +184,7 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
             
             {/* Admin Controls IF applicable */}
             {(profile?.role === 'EDITOR' || profile?.role === 'ADMIN') && (
-              <CourseManagementCard courseId={course.id} courseName={course.name} />
+              <CourseManagementCard courseId={course.id} courseName={course.name} themeColor={(course as any).theme_color} />
             )}
 
             <Card className="bg-gradient-to-br from-slate-800 to-slate-900 text-white border-none overflow-hidden shadow-xl relative">

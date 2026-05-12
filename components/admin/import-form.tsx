@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,9 @@ export function ImportForm() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
-  const contextCourseId = searchParams.get("courseId"); // Check if we came from a pre-existing course
+  const contextCourseId = searchParams.get("courseId");
+  const courseName = searchParams.get("name");
+  const themeColor = searchParams.get("c") || "#2563eb"; // Default tailwind blue-600
 
   // Visual Form State
   const [visualData, setVisualData] = useState({
@@ -122,18 +125,33 @@ export function ImportForm() {
 
   return (
     <>
-      <div className="mb-8">
-        {contextCourseId && (
-          <Link href={`/course/${contextCourseId}`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-4 transition-colors font-medium">
-            <ArrowLeft className="h-4 w-4" /> Volver al Curso
-          </Link>
-        )}
+      {/* DYNAMIC THEMED TOPBAR */}
+      {contextCourseId && (
+        <div className="fixed top-0 left-0 right-0 h-16 z-50 border-b flex items-center px-6 bg-white/90 backdrop-blur-md transition-all shadow-sm">
+          <div className="w-1/3">
+            <Link href={`/course/${contextCourseId}`} className="inline-flex items-center gap-2 text-sm font-bold transition-all" style={{ color: themeColor }}>
+              <ArrowLeft className="h-4 w-4" /> Volver al Panel
+            </Link>
+          </div>
+          <div className="w-1/3 text-center flex flex-col items-center justify-center">
+            <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Estás Editando</span>
+            <h2 className="text-sm font-extrabold truncate max-w-xs text-slate-800 border-b-2 leading-tight" style={{ borderBottomColor: themeColor }}>
+              {courseName || "Curso Actual"}
+            </h2>
+          </div>
+          <div className="w-1/3 flex justify-end">
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
+          </div>
+        </div>
+      )}
+
+      <div className={cn("mb-8", contextCourseId ? "mt-12" : "")}>
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
               {contextCourseId ? "Añadir Nueva Unidad" : "Editor de Contenidos Global"}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mt-1">
               {contextCourseId ? "Inserta nuevo material didáctico directamente en el curso actual." : "Construye mallas curriculares visualmente o mediante exportación directa."}
             </p>
           </div>
@@ -163,7 +181,7 @@ export function ImportForm() {
         {/* VISUAL BUILDER TAB */}
         <TabsContent value="visual" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1 shadow-md h-fit sticky top-24 border-t-4 border-t-blue-600 bg-white">
+            <Card className="lg:col-span-1 shadow-md h-fit sticky top-24 bg-white" style={{ borderTop: `4px solid ${themeColor}` }}>
               <CardHeader>
                 <CardTitle className="text-lg">{contextCourseId ? "Datos de la Unidad" : "Datos del Curso"}</CardTitle>
                 <CardDescription>Describe el bloque temático.</CardDescription>
@@ -187,20 +205,23 @@ export function ImportForm() {
                   </>
                 )}
                 <div className="grid gap-1.5">
-                  <Label className="text-xs font-bold text-blue-700">Título de Unidad*</Label>
-                  <Input className="border-blue-200 focus:ring-blue-500" placeholder="Ej: Unidad 1: Conceptos Básicos" value={visualData.unitTitle} onChange={e => setVisualData({...visualData, unitTitle: e.target.value})}/>
+                  <Label className="text-xs font-bold" style={{ color: themeColor }}>Título de Unidad*</Label>
+                  <Input className="focus:ring-blue-500" placeholder="Ej: Unidad 1: Conceptos Básicos" value={visualData.unitTitle} onChange={e => setVisualData({...visualData, unitTitle: e.target.value})} style={{ borderColor: `${themeColor}30` }}/>
                 </div>
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">Título del Examen/Quiz*</Label>
                   <Input placeholder="Evaluación Semanal 1" value={visualData.examTitle} onChange={e => setVisualData({...visualData, examTitle: e.target.value})}/>
                 </div>
-              </CardContent>
-              <CardFooter className="bg-slate-50 border-t py-4">
-                <Button className="w-full font-black gap-2 bg-blue-600 hover:bg-blue-700 shadow-sm" onClick={handleVisualPublish} disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin"/> : <UploadCloud className="h-4 w-4" />}
-                  {contextCourseId ? "Cargar al Curso" : "Publicar Estructura"}
+                <Button 
+                  onClick={handleVisualPublish} 
+                  disabled={loading} 
+                  className="w-full font-bold gap-2 py-6 text-base shadow-md transition-all hover:scale-[1.01]"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
+                  {loading ? "Procesando..." : (contextCourseId ? "Cargar al Curso" : "Publicar Estructura")}
                 </Button>
-              </CardFooter>
+              </CardContent>
             </Card>
 
             <Card className="lg:col-span-2 shadow-md border-t-4 border-t-indigo-500 bg-white">
@@ -212,6 +233,7 @@ export function ImportForm() {
                 <ExamBuilder 
                   onChange={(qs) => setVisualQuestions(qs)} 
                   initialQuestions={visualQuestions} 
+                  themeColor={themeColor}
                 />
               </CardContent>
             </Card>

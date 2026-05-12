@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 
-export function CourseManagementCard({ courseId, courseName }: { courseId: string, courseName: string }) {
+export function CourseManagementCard({ courseId, courseName, themeColor }: { courseId: string, courseName: string, themeColor?: string }) {
+  const activeColor = themeColor || '#3b82f6'; // default blue-500
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
 
@@ -28,17 +29,17 @@ export function CourseManagementCard({ courseId, courseName }: { courseId: strin
   }
 
   return (
-    <Card className="border-orange-200/60 shadow-lg overflow-hidden bg-white dark:bg-slate-900">
-      <div className="h-1.5 bg-gradient-to-r from-orange-500 to-red-600" />
+    <Card className="shadow-lg overflow-hidden bg-white dark:bg-slate-900" style={{ borderColor: activeColor }}>
+      <div className="h-1.5" style={{ backgroundColor: activeColor }} />
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg text-orange-800 dark:text-orange-400">
+        <CardTitle className="flex items-center gap-2 text-lg" style={{ color: activeColor }}>
           <Settings2 className="h-5 w-5" /> Panel de Control
         </CardTitle>
         <CardDescription>Herramientas de Gestión Administrativa</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Link href={`/admin/import?courseId=${courseId}`} className="w-full block">
-          <Button className="w-full justify-start gap-2 font-bold shadow-sm bg-blue-600 hover:bg-blue-700">
+        <Link href={`/admin/import?courseId=${courseId}&name=${encodeURIComponent(courseName)}&c=${encodeURIComponent(activeColor)}`} className="w-full block">
+          <Button className="w-full font-bold gap-2 shadow-sm transition-all hover:scale-[1.02]" style={{ backgroundColor: activeColor }}>
             <Plus className="h-4 w-4" /> Añadir Unidad / Quiz
           </Button>
         </Link>
