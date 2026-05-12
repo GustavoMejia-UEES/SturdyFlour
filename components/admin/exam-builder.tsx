@@ -54,6 +54,64 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
   const [isUploading, setIsUploading] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  // ADVANCED RAW JSON EDITOR STATES
+  const [isRawJsonOpen, setIsRawJsonOpen] = useState(false);
+  const [rawJsonInput, setRawJsonInput] = useState("");
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  function openRawJson() {
+    setRawJsonInput(JSON.stringify(questions, null, 2));
+    setJsonError(null);
+    setIsRawJsonOpen(true);
+  }
+
+  function handleApplyRawJson() {
+    try {
+      const parsed = JSON.parse(rawJsonInput);
+      if (!Array.isArray(parsed)) {
+        throw new Error("Estructura inválida: El JSON raíz debe ser un Array [] de preguntas.");
+      }
+      
+      const seenIds = new Set<string>();
+      
+      // Validation & Autonomous Identity Healing (Fixes user question IDs)
+      const healed = parsed.map((q: any, idx: number) => {
+        if (!q.question_text) {
+          throw new Error(`Error en pregunta #${idx + 1}: Falta el campo obligatorio 'question_text'.`);
+        }
+        if (!q.type) {
+          throw new Error(`Error en pregunta #${idx + 1}: Falta el campo 'type' (ej: MULTIPLE_CHOICE o AI_OPEN_QUESTION).`);
+        }
+
+        // HEALING ENGINE FOR ID MANAGEMENT
+        // Detect if ID is missing, duplicate, trivially numeric (like "1", "2" from AI generators), or too short
+        const isMissing = !q.id;
+        const isTrivial = q.id && (String(q.id).trim().length < 5 || !isNaN(Number(q.id)));
+        const isDuplicate = q.id && seenIds.has(String(q.id));
+        
+        let finalId = q.id;
+        if (isMissing || isTrivial || isDuplicate) {
+          finalId = crypto.randomUUID(); // Standard robust UUID replacement
+        }
+        
+        seenIds.add(String(finalId));
+
+        return {
+          ...q,
+          id: finalId,
+          options: q.options || [],
+          correct_id: q.correct_id ?? (q.options && q.options[0] ? q.options[0].id : "a")
+        } as Question;
+      });
+
+      setQuestions(healed);
+      onChange(healed);
+      setIsRawJsonOpen(false);
+    } catch (err: any) {
+      setJsonError(err.message || "Error al procesar la cadena JSON. Asegúrese que el formato sea correcto.");
+    }
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -212,41 +270,88 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
             )}
 
             {questions.length > 0 && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs text-slate-500 hover:text-indigo-600 h-8">
-                    <FileJson className="h-3.5 w-3.5" /> JSON Raw
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl bg-white">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 font-black">
-                      <FileJson className="h-5 w-5 text-indigo-600" /> Exportar JSON a Portapapeles
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-xs text-slate-500">
-                      Copia este bloque y pégalo en tu chat de IA favorito para que genere mejoras, correcciones de código o feedback más completo instantáneamente.
-                    </p>
-                    <div className="relative group">
-                      <pre className="bg-slate-950 text-green-400 font-mono text-[10px] p-4 rounded-xl max-h-[300px] overflow-y-auto border shadow-inner selection:bg-indigo-500/30">
-                        {JSON.stringify(questions, null, 2)}
-                      </pre>
-                      <Button 
-                        size="sm" 
-                        className="absolute top-2 right-2 opacity-90 bg-indigo-600 hover:bg-indigo-700"
-                        onClick={() => {
-                          navigator.clipboard.writeText(JSON.stringify(questions, null, 2));
-                          alert("¡Copiado al portapapeles! Listo para pegar en tu LLM.");
-                        }}
-                      >
-                        Copiar
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button variant="ghost" size="sm" onClick={openRawJson} className="gap-1 text-xs text-slate-500 hover:text-indigo-600 h-8">
+                <FileJson className="h-3.5 w-3.5" /> JSON Raw
+              </Button>
             )}
+
+            <Dialog open={isRawJsonOpen} onOpenChange={setIsRawJsonOpen}>
+              <DialogContent className="max-w-3xl bg-white rounded-3xl shadow-2xl border-none flex flex-col max-h-[90vh] overflow-hidden p-0">
+                <div className="px-6 py-5 border-b bg-slate-50/50 flex justify-between items-center shrink-0">
+                  <DialogTitle className="flex items-center gap-2 font-black text-indigo-900 text-xl">
+                    <FileJson className="h-6 w-6 text-indigo-600" /> Motor JSON de Preguntas
+                  </DialogTitle>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col min-h-0">
+                  <Tabs defaultValue="export" className="w-full h-full flex flex-col flex-1">
+                    <TabsList className="grid grid-cols-2 max-w-md mb-4 border shadow-sm bg-slate-100 shrink-0">
+                      <TabsTrigger value="export" className="font-bold text-xs gap-2">📥 Ver y Copiar</TabsTrigger>
+                      <TabsTrigger value="edit" className="font-bold text-xs gap-2">✏️ Editar / Pegar</TabsTrigger>
+                    </TabsList>
+
+                    {/* EXPORT PANEL */}
+                    <TabsContent value="export" className="flex-1 flex flex-col space-y-4 min-h-0">
+                      <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border leading-relaxed">
+                        💡 <strong>Modo Consulta:</strong> Copia este código estructurado para pasarlo a ChatGPT, Claude u otra IA para refinar las preguntas. Vuelve a la pestaña de "Editar" para inyectar la respuesta.
+                      </p>
+                      
+                      <div className="relative flex-1 group min-h-0 flex flex-col overflow-hidden rounded-2xl border border-slate-200">
+                        <pre className="flex-1 w-full max-w-full bg-slate-950 text-green-400 font-mono text-[11px] p-5 overflow-auto shadow-inner select-all select:bg-indigo-500/40 whitespace-pre scrollbar-thin">
+                          {JSON.stringify(questions, null, 2)}
+                        </pre>
+                        <Button 
+                          size="sm" 
+                          className="absolute top-3 right-3 opacity-90 bg-indigo-600 hover:bg-indigo-700 font-bold shadow-lg flex gap-1.5"
+                          onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(questions, null, 2));
+                            alert("¡JSON estructurado copiado al portapapeles!");
+                          }}
+                        >
+                          Copiar Bloque
+                        </Button>
+                      </div>
+                    </TabsContent>
+
+                    {/* EDIT PANEL */}
+                    <TabsContent value="edit" className="flex-1 flex flex-col space-y-4 min-h-0">
+                      <div className="bg-amber-50 text-amber-800 p-3.5 rounded-xl border border-amber-200 flex flex-col gap-1.5 text-xs leading-relaxed shadow-sm shrink-0">
+                        <div className="font-bold flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Motor de Auto-Curación Inteligente Activado</div>
+                        <div>Puedes pegar JSONs creados por IAs directamente. El sistema detectará si las preguntas tienen IDs simples (ej: 1, 2), duplicados o nulos, y <strong>les asignará automáticamente un UUID robusto</strong> de forma transparente para evitar bloqueos de guardado.</div>
+                      </div>
+
+                      {jsonError && (
+                        <div className="bg-red-50 text-red-700 p-3.5 rounded-xl border border-red-200 text-xs font-bold flex items-start gap-2 animate-in shake shrink-0">
+                          <HelpCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          <div>{jsonError}</div>
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-h-[200px] flex flex-col overflow-hidden relative border-2 border-slate-200 rounded-2xl focus-within:border-indigo-500 transition-all bg-slate-50">
+                        <textarea
+                          className="flex-1 w-full p-5 font-mono text-[11px] outline-none bg-slate-950 text-indigo-300 resize-none placeholder:text-slate-600 selection:bg-indigo-500/40"
+                          value={rawJsonInput}
+                          onChange={(e) => {
+                            setRawJsonInput(e.target.value);
+                            setJsonError(null);
+                          }}
+                          placeholder={'[\n  {\n    "type": "MULTIPLE_CHOICE",\n    "question_text": "Contenido..."\n  }\n]'}
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-3 pt-2 shrink-0">
+                        <Button variant="outline" onClick={() => setIsRawJsonOpen(false)} className="font-bold text-xs border-slate-300">
+                          Cancelar
+                        </Button>
+                        <Button onClick={handleApplyRawJson} className="font-black text-xs bg-indigo-600 hover:bg-indigo-700 shadow-md">
+                          Validar & Sincronizar Cambios
+                        </Button>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button size="sm" onClick={() => setIsOpen(true)} className="gap-1 shadow-sm h-8 font-bold" style={{ backgroundColor: themeColor }}>
               <PlusCircle className="h-3.5 w-3.5" /> Añadir Pregunta
             </Button>
@@ -549,11 +654,14 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
 function QuestionBankItem({ q, idx, onRemove }: { q: Question, idx: number, onRemove: () => void }) {
   const [expanded, setExpanded] = React.useState(false);
 
+  // Heuristic to decide if text warrants collapse mechanics
+  const isLongText = q.question_text.length > 180 || q.question_text.includes("\n\n") || q.question_text.includes("```");
+
   return (
-    <Card className="shadow-sm hover:border-primary/50 transition-colors relative overflow-hidden group">
+    <Card className="shadow-sm hover:border-primary/50 transition-colors relative overflow-hidden group bg-white border-slate-200">
       <CardContent className="p-4 flex items-start justify-between gap-4">
-        <div className="flex-1 flex gap-3">
-          <div className="h-7 w-7 bg-slate-100 rounded-md flex items-center justify-center text-xs font-bold shrink-0 border">
+        <div className="flex-1 flex gap-3 min-w-0">
+          <div className="h-7 w-7 bg-slate-100 rounded-md flex items-center justify-center text-xs font-bold shrink-0 border text-slate-600">
             {idx + 1}
           </div>
           <div className="flex-1 min-w-0">
@@ -563,24 +671,26 @@ function QuestionBankItem({ q, idx, onRemove }: { q: Question, idx: number, onRe
               }`}>
                 {q.type === 'AI_OPEN_QUESTION' ? 'Respuesta Abierta' : 'Multi-Opción'}
               </span>
-              <button 
-                type="button"
-                onClick={() => setExpanded(!expanded)}
-                className="text-[10px] font-bold text-blue-600 hover:underline uppercase ml-auto"
-              >
-                {expanded ? 'Contraer [-]' : 'Expandir [+]'}
-              </button>
+              {isLongText && (
+                <button 
+                  type="button"
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors hover:underline uppercase ml-auto shrink-0"
+                >
+                  {expanded ? 'Contraer [-]' : 'Expandir [+]'}
+                </button>
+              )}
             </div>
 
             <div className={cn(
-              "relative font-medium text-sm leading-snug text-slate-800 prose prose-slate prose-sm prose-p:leading-tight max-w-full",
-              !expanded && "max-h-[80px] overflow-hidden"
+              "relative font-medium text-sm leading-snug text-slate-800 prose prose-slate prose-sm prose-p:leading-tight w-full max-w-full overflow-x-auto break-words",
+              isLongText && !expanded && "max-h-[100px] overflow-hidden"
             )}>
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
                 {q.question_text}
               </ReactMarkdown>
-              {!expanded && (
-                <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+              {isLongText && !expanded && (
+                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
               )}
             </div>
           </div>
