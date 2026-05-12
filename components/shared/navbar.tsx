@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { UserButton, Show, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { getAuthenticatedProfile } from "@/lib/auth/session";
 
-export function Navbar() {
+export async function Navbar() {
+  const profile = await getAuthenticatedProfile();
+  const isSignedIn = !!profile;
+
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -18,21 +21,29 @@ export function Navbar() {
         </Link>
 
         <nav className="flex items-center space-x-4">
-          <Show when="signed-in">
-            <Link href="/dashboard">
-              <Button variant="ghost" className="font-semibold text-sm hover:bg-secondary">Dashboard</Button>
-            </Link>
-            <div className="border-l pl-4 h-8 flex items-center">
-              <UserButton afterSignOutUrl="/" />
-            </div>
-          </Show>
-          <Show when="signed-out">
-            <SignInButton mode="modal">
+          {isSignedIn ? (
+            <>
+              <Link href="/dashboard">
+                <Button variant="ghost" className="font-semibold text-sm hover:bg-secondary">Dashboard</Button>
+              </Link>
+              <div className="border-l pl-4 h-8 flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground hidden sm:inline-block">
+                  {profile.name || profile.email}
+                </span>
+                <form action="/api/auth/logout" method="POST">
+                  <Button type="submit" variant="outline" size="sm" className="rounded-xl font-semibold text-xs px-3">
+                    Salir
+                  </Button>
+                </form>
+              </div>
+            </>
+          ) : (
+            <Link href="/login">
               <Button className="font-bold shadow-md text-sm bg-primary hover:opacity-90 text-primary-foreground border-none rounded-xl px-6">
                 Entrar
               </Button>
-            </SignInButton>
-          </Show>
+            </Link>
+          )}
         </nav>
       </div>
     </header>

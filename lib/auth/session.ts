@@ -1,46 +1,39 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '../db';
 import { profiles } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { verifyToken } from './jwt';
 
 /**
- * Fetches the currently authenticated User Profile from local DB.
- * If the user exists in Clerk but not yet in our DB, it auto-initializes 
- * them securely with the 'NEW' role.
+ * Fetches the currently authenticated User Profile from local DB by verifying custom JWT cookie.
  */
 export async function getAuthenticatedProfile() {
-  const session = await auth();
-  if (!session.userId) return null;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
 
-  const env = getRequestContext().env;
-  const db = getDb(env.DB);
+    if (!token) return null;
 
-  // 1. Attempt to fetch existing profile
-  let profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, session.userId),
-  });
+    const env = getRequestContext().env;
+    const jwtSecret = (env as any).JWT_SECRET as string | undefined;
 
-  // 2. Safe creation on-demand if missing (Automatic Sync)
-  if (!profile) {
-    try {
-      const [newProfile] = await db.insert(profiles).values({
-        id: session.userId,
-        role: 'NEW',
-        stars: 0
-      }).onConflictDoNothing().returning();
+    // Verify valid signature and expiry
+    const payload = await verifyToken(token, jwtSecret);
+    if (!payload) return null;
 
-      // If conflict resolved with nothing, refetch to be sure
-      profile = newProfile || await db.query.profiles.findFirst({
-        where: eq(profiles.id, session.userId),
-      });
-    } catch (e) {
-      console.error("Session profile sync failed", e);
-      // Fallback during race conditions
-    }
+    const db = getDb(env.DB);
+
+    // Fetch full profile row from D1 by the parsed UUID inside token
+    const profile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, payload.userId),
+    });
+
+    return profile || null;
+  } catch (e) {
+    console.error("Auth retrieval system failed", e);
+    return null;
   }
-
-  return profile;
 }
 
 /**

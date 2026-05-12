@@ -3,7 +3,10 @@ import { sql } from 'drizzle-orm';
 
 // --- USER & PERMISSIONS ---
 export const profiles = sqliteTable('profiles', {
-  id: text('id').primaryKey(), // Maps exactly to Clerk user_id
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text('email').unique().notNull(),
+  passwordHash: text('password_hash').notNull(),
+  name: text('name'),
   role: text('role').$type<'NEW' | 'STUDENT' | 'EDITOR' | 'ADMIN'>().default('NEW').notNull(),
   stars: integer('stars').default(0).notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),

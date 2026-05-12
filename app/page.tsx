@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/shared/navbar";
-import { Show, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { BrainCircuit, FileText, GraduationCap, Sparkles } from "lucide-react";
+import { getAuthenticatedProfile } from "@/lib/auth/session";
 
 export const runtime = "edge";
 
-export default function Home() {
+export default async function Home() {
+  const profile = await getAuthenticatedProfile();
+  const isSignedIn = !!profile;
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -28,20 +31,19 @@ export default function Home() {
         </p>
 
         <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
-          <Show when="signed-in">
+          {isSignedIn ? (
             <Link href="/dashboard">
               <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group">
                 <GraduationCap className="group-hover:scale-110 transition-transform" /> Entrar al Sistema
               </Button>
             </Link>
-          </Show>
-          <Show when="signed-out">
-            <SignInButton mode="modal">
+          ) : (
+            <Link href="/login">
               <Button size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl shadow-xl bg-primary hover:opacity-90 text-primary-foreground gap-3 border-none group">
                 Iniciar Sesión Ahora <BrainCircuit className="group-hover:rotate-12 transition-transform" />
               </Button>
-            </SignInButton>
-          </Show>
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-28 max-w-5xl w-full text-left px-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-700">
