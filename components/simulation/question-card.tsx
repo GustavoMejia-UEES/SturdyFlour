@@ -3,6 +3,8 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { Question } from "@/lib/types/course";
 import { cn } from "@/lib/utils";
 import { Sparkles, CheckCircle2 } from "lucide-react";
@@ -29,7 +31,7 @@ export function QuestionVisualCard({ question, value, onChange, disabled }: Prop
           </span>
         </div>
         <CardTitle className="text-xl md:text-2xl font-bold leading-tight text-slate-800 prose max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{question.question_text || "*(Sin título todavía)*"}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{question.question_text || "*(Sin título todavía)*"}</ReactMarkdown>
         </CardTitle>
         {question.image_url && (
           <div className="mt-4 rounded-xl overflow-hidden border bg-black/5 max-h-[300px] flex justify-center">
@@ -92,7 +94,7 @@ export function QuestionVisualCard({ question, value, onChange, disabled }: Prop
                     )}
                   </div>
                   <div className="prose prose-slate prose-sm leading-snug">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{opt.text || "Opción sin texto"}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{opt.text || "Opción sin texto"}</ReactMarkdown>
                   </div>
                 </button>
               )) : <div className="text-center py-4 text-slate-400 italic">Añade opciones para verlas aquí.</div>;

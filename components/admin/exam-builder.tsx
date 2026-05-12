@@ -10,9 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
-import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, Sigma } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { UnifiedSimulator, markdownComponents } from "../simulation/unified-simulator";
 import { QuestionVisualCard } from "../simulation/question-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,18 +70,39 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
   }
 
   function switchUiType(val: any) {
+    // Reset major form values to prevent overlapping states between modes
+    setQTitle("");
+    setQBody("");
+    setQFeedback("");
+    setCodeSnippet("");
+    setImageUrl("");
+    setAiTopic("");
+    setAiConcepts("");
+
     setUiType(val);
     if (val === 'TF') {
       setMcqOptions([{ id: "a", text: "Verdadero" }, { id: "b", text: "Falso" }]);
       setCorrectIds(["a"]);
-    } else if (val === 'MCQ') {
+    } else {
       setMcqOptions([{ id: "a", text: "" }, { id: "b", text: "" }]);
+      setCorrectIds(["a"]);
     }
   }
 
   function insertCodeSnippet() {
     const snippet = "\n```javascript\n// Escribe tu código aquí\n\n```\n";
     setQBody(prev => prev + snippet);
+  }
+
+  function insertFormula() {
+    const formula = " $$ E = mc^2 $$ ";
+    setQBody(prev => prev + formula);
+  }
+
+  function insertFormulaToOption(index: number) {
+    const next = [...mcqOptions];
+    next[index].text = (next[index].text || "") + " $$ x^2 $$ ";
+    setMcqOptions(next);
   }
 
   function handleSaveQuestion() {
@@ -251,11 +274,16 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                         </div>
 
                         <div className="grid gap-1.5">
-                          <div className="flex justify-between items-center">
+                          <div className="flex justify-between items-center gap-2">
                             <Label className="text-slate-700 font-semibold">Contenido / Contexto</Label>
-                            <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-400 hover:text-primary" onClick={insertCodeSnippet}>
-                              <Code className="h-3 w-3 mr-1" /> Inyectar Markdown Code
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-400 hover:text-primary" onClick={insertFormula}>
+                                <Sigma className="h-3 w-3 mr-1" /> Fórmula
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-400 hover:text-primary" onClick={insertCodeSnippet}>
+                                <Code className="h-3 w-3 mr-1" /> Inyectar Código
+                              </Button>
+                            </div>
                           </div>
                           <Textarea 
                             placeholder="Describe la situación o problema aquí. Soporta Markdown..." 
@@ -323,17 +351,34 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                                 >
                                   {correctIds.includes(opt.id) ? <CheckCircle2 className="h-5 w-5" /> : <CircleDot className="h-5 w-5" />}
                                 </button>
-                                <Input 
-                                  placeholder={`Texto de opción ${i+1}`}
-                                  value={opt.text}
-                                  disabled={uiType === 'TF'}
-                                  onChange={(e) => {
-                                    const next = [...mcqOptions];
-                                    next[i].text = e.target.value;
-                                    setMcqOptions(next);
-                                  }}
-                                  className="bg-white h-10"
-                                />
+                                <div className="flex-1 relative group/item">
+                                  <Input 
+                                    placeholder={`Texto de opción ${i+1}`}
+                                    value={opt.text}
+                                    disabled={uiType === 'TF'}
+                                    onChange={(e) => {
+                                      const next = [...mcqOptions];
+                                      next[i].text = e.target.value;
+                                      setMcqOptions(next);
+                                    }}
+                                    className="bg-white h-10 pr-10"
+                                  />
+                                  {uiType !== 'TF' && (
+                                    <button 
+                                      type="button"
+                                      onClick={() => insertFormulaToOption(i)}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-600 transition-colors p-1 opacity-50 group-hover/item:opacity-100"
+                                      title="Insertar Fórmula LaTeX"
+                                    >
+                                      <Sigma className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                                {uiType !== 'TF' && mcqOptions.length > 2 && (
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-500 shrink-0" onClick={() => setMcqOptions(mcqOptions.filter(o => o.id !== opt.id))}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                             {uiType !== 'TF' && (
@@ -431,7 +476,7 @@ export function ExamBuilder({ onChange, initialQuestions = [] }: Props) {
                       </span>
                     </div>
                     <div className="font-medium text-sm leading-snug text-slate-800 prose prose-slate prose-sm prose-p:leading-tight">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{q.question_text}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{q.question_text}</ReactMarkdown>
                     </div>
                   </div>
                 </div>

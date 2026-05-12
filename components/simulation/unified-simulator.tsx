@@ -12,6 +12,8 @@ import Link from "next/link";
 import { QuestionVisualCard } from "./question-card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -178,11 +180,11 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
                 <Card key={q.id} className="border-l-4 border-l-indigo-500">
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start gap-2 mb-3">
-                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
+                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
                       <span className="font-mono text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded shadow-sm">IA SCORING: {evalRes?.score ?? 0}%</span>
                     </div>
                     <div className="text-sm bg-slate-50 p-3 rounded border mb-3 italic text-slate-700 prose prose-sm max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{`"${userAnswers[q.id]}"`}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{`"${userAnswers[q.id]}"`}</ReactMarkdown>
                     </div>
                     <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 flex gap-3">
                       <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
@@ -212,7 +214,7 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
               <Card key={q.id} className={cn("border-l-4", isCorrect ? "border-l-green-500" : "border-l-red-500")}>
                  <CardContent className="p-5">
                     <div className="flex justify-between items-start gap-2 mb-2">
-                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
+                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
                       {isCorrect ? <CheckCircle2 className="text-green-600 h-5 w-5 shrink-0" /> : <XCircle className="text-red-600 h-5 w-5 shrink-0" />}
                     </div>
                     {q.feedback_general && !isCorrect && (
