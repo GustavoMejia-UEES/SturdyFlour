@@ -9,14 +9,65 @@ import { cn } from "@/lib/utils";
 import { ChevronRight, ChevronLeft, Trophy, RefreshCw, CheckCircle2, XCircle, Loader2, Sparkles } from "lucide-react";
 import { evaluateOpenQuestion } from "@/lib/api/evaluator";
 import Link from "next/link";
+import { QuestionVisualCard } from "./question-card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type AIResult = {
   score: number;
   analysis: string;
   found_concepts: string[];
 }
+
+// --- SHARED PREMIUM MARKDOWN RENDERER CONFIG ---
+export const markdownComponents = {
+  code({ node, inline, className, children, ...props }: any) {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+    
+    if (!inline && language) {
+      return (
+        <div className="group relative my-5 rounded-xl overflow-hidden border border-slate-700/50 bg-[#1E1E1E] shadow-xl ring-1 ring-white/5 font-sans">
+          {/* Mac Window Header */}
+          <div className="flex items-center justify-between px-4 py-2 bg-[#191919] border-b border-[#333]">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
+              <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
+              <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
+            </div>
+            <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{language}</span>
+          </div>
+          {/* Code Body */}
+          <div className="overflow-x-auto text-[13px] leading-relaxed font-mono">
+            <SyntaxHighlighter
+              // eslint-disable-next-line react/no-children-prop
+              children={String(children).replace(/\n$/, '')}
+              style={vscDarkPlus}
+              language={language}
+              PreTag="div"
+              customStyle={{ 
+                margin: 0, 
+                background: 'transparent', 
+                padding: '1.25rem', 
+                fontSize: '0.85rem',
+                lineHeight: '1.5'
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <code className={cn("bg-slate-100 text-pink-600 px-1.5 py-0.5 rounded font-mono text-[0.9em] border border-slate-200", className)} {...props}>
+        {children}
+      </code>
+    );
+  }
+};
+// ------------------------------------------------
 
 export function UnifiedSimulator({ testTitle, courseName, questions, courseId }: { 
   testTitle: string;
@@ -127,11 +178,11 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
                 <Card key={q.id} className="border-l-4 border-l-indigo-500">
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start gap-2 mb-3">
-                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
+                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
                       <span className="font-mono text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded shadow-sm">IA SCORING: {evalRes?.score ?? 0}%</span>
                     </div>
                     <div className="text-sm bg-slate-50 p-3 rounded border mb-3 italic text-slate-700 prose prose-sm max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{`"${userAnswers[q.id]}"`}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{`"${userAnswers[q.id]}"`}</ReactMarkdown>
                     </div>
                     <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 flex gap-3">
                       <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
@@ -161,7 +212,7 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
               <Card key={q.id} className={cn("border-l-4", isCorrect ? "border-l-green-500" : "border-l-red-500")}>
                  <CardContent className="p-5">
                     <div className="flex justify-between items-start gap-2 mb-2">
-                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
+                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
                       {isCorrect ? <CheckCircle2 className="text-green-600 h-5 w-5 shrink-0" /> : <XCircle className="text-red-600 h-5 w-5 shrink-0" />}
                     </div>
                     {q.feedback_general && !isCorrect && (
@@ -193,155 +244,62 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
         <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }} />
       </div>
 
-      <Card className="shadow-xl border-border/60 bg-white min-h-[300px] flex flex-col">
-        <CardHeader className="pb-6 border-b bg-slate-50/50">
-          <div className="flex gap-2 mb-2">
-            <span className={cn(
-              "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border",
-              currentQuestion.type === 'AI_OPEN_QUESTION' ? "bg-indigo-100 text-indigo-800 border-indigo-200" : "bg-blue-100 text-blue-800 border-blue-200"
-            )}>
-              {currentQuestion.type === 'AI_OPEN_QUESTION' ? 'Respuesta Abierta (IA)' : 'Selección Múltiple'}
-            </span>
-          </div>
-          <CardTitle className="text-xl md:text-2xl font-bold leading-tight text-slate-800 prose max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentQuestion.question_text}</ReactMarkdown>
-          </CardTitle>
-          {currentQuestion.image_url && (
-            <div className="mt-4 rounded-xl overflow-hidden border bg-black/5 max-h-[300px] flex justify-center">
-              <img 
-                src={currentQuestion.image_url} 
-                alt="Ilustración de pregunta" 
-                className="object-contain max-h-[300px] w-auto"
-              />
-            </div>
-          )}
-        </CardHeader>
+      <QuestionVisualCard 
+        question={currentQuestion}
+        value={userAnswers[currentQuestion.id]}
+        onChange={(val) => setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: val }))}
+        disabled={evaluating}
+      />
 
-        <CardContent className="flex-1 py-8 px-6 md:px-10">
-          {/* Conditional Rendering per type */}
-          {currentQuestion.type === 'MULTIPLE_CHOICE' ? (
-            <div className="grid gap-3">
-              {(() => {
-                const isMulti = Array.isArray(currentQuestion.correct_id);
-                const currentSelected = userAnswers[currentQuestion.id] || (isMulti ? [] : null);
-                
-                const toggleOption = (optId: string) => {
-                  if (isMulti) {
-                    const currentArr = Array.isArray(currentSelected) ? currentSelected : [];
-                    const next = currentArr.includes(optId) 
-                      ? currentArr.filter((i: any) => i !== optId)
-                      : [...currentArr, optId];
-                    setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: next }));
-                  } else {
-                    setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: optId }));
-                  }
-                };
+      <div className="mt-5 flex justify-between items-center bg-white/50 backdrop-blur-sm border border-slate-200/60 p-4 rounded-2xl shadow-sm">
+        <Button 
+          variant="ghost" 
+          className="font-bold text-slate-500"
+          disabled={currentIndex === 0 || evaluating}
+          onClick={() => setCurrentIndex(prev => prev - 1)}
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+        </Button>
 
-                const isSelected = (optId: string) => {
-                   return isMulti 
-                    ? Array.isArray(currentSelected) && currentSelected.includes(optId)
-                    : currentSelected === optId;
-                };
-
-                return currentQuestion.options.map((opt) => (
-                  <button 
-                    key={opt.id}
-                    onClick={() => toggleOption(opt.id)}
-                    className={cn(
-                      "w-full text-left px-5 py-4 rounded-xl border-2 transition-all font-medium flex items-start gap-4 group",
-                      isSelected(opt.id)
-                        ? "bg-blue-50 border-blue-600 text-blue-900 shadow-sm" 
-                        : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-6 h-6 shrink-0 flex items-center justify-center transition-colors mt-0.5",
-                      isMulti ? "rounded-md border-2" : "rounded-full border-2",
-                      isSelected(opt.id) ? "border-blue-600 bg-blue-600" : "border-slate-300 group-hover:border-slate-400"
-                    )}>
-                      {isSelected(opt.id) && (
-                        isMulti ? <CheckCircle2 className="h-4 w-4 text-white" /> : <div className="w-2 h-2 bg-white rounded-full" />
-                      )}
-                    </div>
-                    <div className="prose prose-slate prose-sm leading-snug">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{opt.text}</ReactMarkdown>
-                    </div>
-                  </button>
-                ));
-              })()}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 bg-indigo-50 p-4 rounded-lg text-sm border border-indigo-100 mb-4">
-                <Sparkles className="h-5 w-5 text-indigo-600 shrink-0" />
-                <div>
-                  <span className="font-bold text-indigo-900 block mb-1">Contexto para la IA</span>
-                  <p className="text-indigo-800/80 leading-relaxed">
-                    Explica tu punto con claridad. La IA validará conceptos relacionados con: <strong className="text-indigo-900">{currentQuestion.ai_context.topic}</strong>.
-                  </p>
-                </div>
-              </div>
-              <Textarea 
-                placeholder="Escribe aquí tu explicación detallada..."
-                className="min-h-[200px] text-base resize-none border-2 focus-visible:ring-indigo-500"
-                value={userAnswers[currentQuestion.id] || ""}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
-                disabled={evaluating}
-              />
-            </div>
-          )}
-        </CardContent>
-
-        <CardFooter className="bg-slate-50 py-5 border-t flex justify-between">
-          <Button 
-            variant="ghost" 
-            className="font-bold"
-            disabled={currentIndex === 0 || evaluating}
-            onClick={() => setCurrentIndex(prev => prev - 1)}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
-          </Button>
-
-          {(() => {
-            const currentVal = userAnswers[currentQuestion.id];
-            const hasValue = Array.isArray(currentVal) ? currentVal.length > 0 : !!currentVal;
-            
-            if (currentQuestion.type === 'AI_OPEN_QUESTION') {
-              return (
-                <Button 
-                  disabled={!hasValue || evaluating}
-                  onClick={processOpenAnswer}
-                  className="font-black px-8 bg-indigo-600 hover:bg-indigo-700 gap-2 shadow-md shadow-indigo-200"
-                >
-                  {evaluating ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Evaluando con IA...</>
-                  ) : (
-                    <>Enviar y Avanzar <ChevronRight className="h-4 w-4" /></>
-                  )}
-                </Button>
-              );
-            }
-
-            return currentIndex === questions.length - 1 ? (
+        {(() => {
+          const currentVal = userAnswers[currentQuestion.id];
+          const hasValue = Array.isArray(currentVal) ? currentVal.length > 0 : !!currentVal;
+          
+          if (currentQuestion.type === 'AI_OPEN_QUESTION') {
+            return (
               <Button 
-                className="font-black px-8 shadow-lg"
-                disabled={!hasValue}
-                onClick={() => setShowResults(true)}
+                disabled={!hasValue || evaluating}
+                onClick={processOpenAnswer}
+                className="font-bold px-8 bg-indigo-600 hover:bg-indigo-700 gap-2 shadow-lg shadow-indigo-200/50 rounded-xl"
               >
-                Finalizar Prueba <Trophy className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button 
-                className="font-black px-8"
-                disabled={!hasValue}
-                onClick={() => setCurrentIndex(prev => prev + 1)}
-              >
-                Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+                {evaluating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Evaluando...</>
+                ) : (
+                  <>Enviar Respuesta <ChevronRight className="h-4 w-4" /></>
+                )}
               </Button>
             );
-          })()}
-        </CardFooter>
-      </Card>
+          }
+
+          return currentIndex === questions.length - 1 ? (
+            <Button 
+              className="font-bold px-8 shadow-lg shadow-primary/20 rounded-xl"
+              disabled={!hasValue}
+              onClick={() => setShowResults(true)}
+            >
+              Finalizar Prueba <Trophy className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button 
+              className="font-bold px-8 rounded-xl shadow-md"
+              disabled={!hasValue}
+              onClick={() => setCurrentIndex(prev => prev + 1)}
+            >
+              Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          );
+        })()}
+      </div>
     </div>
   );
 }
