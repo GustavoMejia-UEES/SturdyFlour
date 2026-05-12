@@ -232,6 +232,11 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
   // RENDER RUNTIME VIEW
   return (
     <div className="space-y-6">
+      {courseId !== "preview" && (
+        <Link href={`/course/${courseId}`} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-2 group">
+          <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> Volver al Curso
+        </Link>
+      )}
       <div className="flex justify-between items-end border-b pb-4">
         <div>
           <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">{courseName}</p>
