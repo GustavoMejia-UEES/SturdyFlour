@@ -169,18 +169,18 @@ export function ImportForm() {
       {contextCourseId && (
         <div className="fixed top-0 left-0 right-0 h-16 z-50 border-b flex items-center px-6 bg-white/90 backdrop-blur-md transition-all shadow-sm">
           <div className="w-1/3">
-            <Link href={`/course/${contextCourseId}`} className="inline-flex items-center gap-2 text-sm font-bold transition-all" style={{ color: themeColor }}>
+            <Link href={`/course/${contextCourseId}`} className="inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-indigo-600 transition-all">
               <ArrowLeft className="h-4 w-4" /> Volver al Panel
             </Link>
           </div>
           <div className="w-1/3 text-center flex flex-col items-center justify-center">
             <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-0.5">Estás Editando</span>
-            <h2 className="text-sm font-extrabold truncate max-w-xs text-slate-800 border-b-2 leading-tight" style={{ borderBottomColor: themeColor }}>
+            <h2 className="text-sm font-extrabold truncate max-w-xs text-slate-800 border-b-2 border-b-indigo-500 leading-tight">
               {courseName || "Curso Actual"}
             </h2>
           </div>
           <div className="w-1/3 flex justify-end">
-            <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
+            <span className="h-2 w-2 rounded-full animate-pulse bg-indigo-500" />
           </div>
         </div>
       )}
@@ -230,7 +230,7 @@ export function ImportForm() {
         {/* VISUAL BUILDER TAB */}
         <TabsContent value="visual" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1 shadow-md h-fit sticky top-24 bg-white" style={{ borderTop: `4px solid ${themeColor}` }}>
+            <Card className="lg:col-span-1 shadow-md h-fit sticky top-24 bg-white border-t-4 border-t-slate-800">
               <CardHeader>
                 <CardTitle className="text-lg">{contextCourseId ? "Datos de la Unidad" : "Datos del Curso"}</CardTitle>
                 <CardDescription>Describe el bloque temático.</CardDescription>
@@ -254,8 +254,8 @@ export function ImportForm() {
                   </>
                 )}
                 <div className="grid gap-1.5">
-                  <Label className="text-xs font-bold" style={{ color: themeColor }}>Título de Unidad*</Label>
-                  <Input className="focus:ring-blue-500" placeholder="Ej: Unidad 1: Conceptos Básicos" value={visualData.unitTitle} onChange={e => setVisualData({...visualData, unitTitle: e.target.value})} style={{ borderColor: `${themeColor}30` }}/>
+                  <Label className="text-xs font-bold text-slate-700">Título de Unidad*</Label>
+                  <Input className="focus:ring-indigo-500 border-slate-200" placeholder="Ej: Unidad 1: Conceptos Básicos" value={visualData.unitTitle} onChange={e => setVisualData({...visualData, unitTitle: e.target.value})} />
                 </div>
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">Título del Examen/Quiz*</Label>
@@ -264,8 +264,7 @@ export function ImportForm() {
                 <Button 
                   onClick={handleVisualPublish} 
                   disabled={loading} 
-                  className="w-full font-bold gap-2 py-6 text-base shadow-md transition-all hover:scale-[1.01]"
-                  style={{ backgroundColor: themeColor }}
+                  className="w-full font-black gap-2 py-6 text-base bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/10 transition-all hover:scale-[1.01]"
                 >
                   {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
                   {loading ? "Procesando..." : (contextCourseId ? "Cargar al Curso" : "Publicar Estructura")}

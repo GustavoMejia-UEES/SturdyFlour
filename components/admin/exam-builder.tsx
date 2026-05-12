@@ -424,6 +424,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                     <DialogTitle className="text-indigo-900 flex items-center gap-2 font-black">
                       <Sparkles className="h-5 w-5" /> Simulación de Prueba (Modo Preview)
                     </DialogTitle>
+                    <DialogDescription className="sr-only">Previsualización interactiva del examen.</DialogDescription>
                   </DialogHeader>
                   <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-100">
                      <UnifiedSimulator 
@@ -431,6 +432,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                        courseName="Vista Previa Editor" 
                        testTitle="Examen en Construcción" 
                        courseId="preview"
+                       themeColor={themeColor}
                      />
                   </div>
                 </DialogContent>
@@ -446,6 +448,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                   <DialogTitle className="flex items-center gap-2 font-black text-indigo-900 text-xl">
                     <FileJson className="h-6 w-6 text-indigo-600" /> Motor JSON de Preguntas
                   </DialogTitle>
+                  <DialogDescription className="sr-only">Copiar o pegar banco de preguntas JSON.</DialogDescription>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 flex flex-col min-h-0">
@@ -564,7 +567,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                 </div>
               </DialogContent>
             </Dialog>
-            <Button size="sm" onClick={handleOpenNewQuestion} className="gap-1 shadow-sm h-8 font-bold" style={{ backgroundColor: themeColor }}>
+            <Button size="sm" onClick={handleOpenNewQuestion} className="gap-1 shadow-sm h-8 font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/10">
               <PlusCircle className="h-3.5 w-3.5" /> Añadir Pregunta
             </Button>
           </div>
@@ -603,10 +606,13 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                   {/* LEFT SIDE: EDITOR STUDIO */}
                   <div className="w-[45%] h-full overflow-y-auto bg-slate-50/50 border-r flex flex-col">
                     <div className="px-6 py-5 border-b bg-white sticky top-0 z-10 flex justify-between items-center">
-                      <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                        <Sparkles className={cn("h-5 w-5", editingId ? "text-amber-500" : "text-primary")} /> 
-                        {editingId ? 'Actualizar Pregunta' : 'Editor de Pregunta'}
-                      </h3>
+                      <div>
+                        <DialogTitle className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                          <Sparkles className={cn("h-5 w-5", editingId ? "text-amber-500" : "text-primary")} /> 
+                          {editingId ? 'Actualizar Pregunta' : 'Editor de Pregunta'}
+                        </DialogTitle>
+                        <DialogDescription className="sr-only">Configura y diseña tu pregunta con multimedia y soporte LaTeX.</DialogDescription>
+                      </div>
                       <Button onClick={handleSaveQuestion} className="font-black gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-sm text-xs px-4 py-2 h-9 rounded-xl">
                         {editingId ? 'Guardar Cambios' : 'Añadir al Banco'}
                       </Button>
@@ -813,6 +819,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
               <DialogTitle className="flex items-center gap-2">
                 <Sigma className="h-5 w-5 text-blue-600" /> Guía de Fórmulas LaTeX
               </DialogTitle>
+              <DialogDescription className="sr-only">Guía rápida de sintaxis LaTeX compatible.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 text-sm text-slate-700">
               <p>Puedes insertar ecuaciones tipográficas profesionales usando delimitadores de dólar:</p>
@@ -854,7 +861,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
               Añade tu primera pregunta interactiva para habilitar el examen.
             </p>
-            <Button size="lg" onClick={handleOpenNewQuestion} className="font-bold gap-2 shadow-lg animate-bounce-once" style={{ backgroundColor: themeColor }}>
+            <Button size="lg" onClick={handleOpenNewQuestion} className="font-bold gap-2 shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20 animate-bounce-once">
               <PlusCircle className="h-5 w-5" /> ¡Empezar a Crear Preguntas!
             </Button>
           </div>

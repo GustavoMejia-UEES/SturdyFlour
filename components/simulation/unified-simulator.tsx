@@ -78,9 +78,10 @@ export interface UnifiedSimulatorProps {
   questions: Question[];
   assessmentId?: string;
   courseId: string;
+  themeColor?: string;
 }
 
-export function UnifiedSimulator({ testTitle, courseName, questions, courseId }: UnifiedSimulatorProps) {
+export function UnifiedSimulator({ testTitle, courseName, questions, courseId, themeColor = "#2563eb" }: UnifiedSimulatorProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   
@@ -150,7 +151,7 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
     const finalScore = calculateFinalScore();
     return (
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-        <Card className="border-t-4 border-t-primary overflow-hidden bg-white shadow-md text-center">
+        <Card className="border-t-8 overflow-hidden bg-white shadow-xl rounded-3xl text-center" style={{ borderTopColor: themeColor }}>
           <CardHeader className="pt-8 pb-2">
             <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-2">
               <Trophy className="text-blue-600 h-8 w-8" />
@@ -300,23 +301,42 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId }:
   // RENDER RUNTIME VIEW
   return (
     <div className="space-y-6">
-      {courseId !== "preview" && (
-        <Link href={`/course/${courseId}`} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-2 group">
-          <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> Volver al Curso
-        </Link>
-      )}
-      <div className="flex justify-between items-end border-b pb-4">
-        <div>
-          <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground mb-1">{courseName}</p>
-          <h1 className="text-2xl font-black text-slate-900 leading-none">{testTitle}</h1>
+      {/* Premium Dynamic Top Bar Banner */}
+      <div 
+        className="w-full rounded-[32px] px-6 md:px-8 py-10 md:py-14 text-white shadow-xl flex flex-col justify-end relative overflow-hidden animate-in fade-in slide-in-from-top-6 duration-700 shadow-indigo-950/5"
+        style={{ backgroundColor: themeColor }}
+      >
+        {/* Graphic pattern overlays for tech feel */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_60%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-slate-950/5 to-transparent pointer-events-none" />
+        
+        <div className="relative z-10">
+          {courseId !== "preview" && (
+            <Link href={`/course/${courseId}`} className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wide text-white/90 hover:text-white bg-white/15 hover:bg-white/25 px-3.5 py-1.5 rounded-xl transition-all mb-6 backdrop-blur-md shadow-sm w-fit active:scale-95 group">
+              <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" /> Volver al Curso
+            </Link>
+          )}
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60 mb-2 select-none">Área Académica</p>
+          <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight select-none drop-shadow-sm">{courseName}</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-white/60 animate-pulse" />
+            <p className="text-sm md:text-base font-semibold text-white/80 select-none capitalize">{testTitle.toLowerCase()}</p>
+          </div>
         </div>
-        <span className="text-sm font-mono font-bold bg-white border shadow-sm px-3 py-1 rounded-full text-slate-600">
-          Iteración {currentIndex + 1} / {questions.length}
+      </div>
+
+      <div className="flex justify-between items-center mt-6 select-none">
+        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Saturación de Progreso</p>
+        <span className="text-xs font-mono font-black bg-white border shadow-sm px-3 py-1.5 rounded-2xl text-slate-600 flex items-center gap-1.5">
+          Iteración <strong className="text-slate-950">{currentIndex + 1}</strong> de {questions.length}
         </span>
       </div>
 
-      <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-        <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }} />
+      <div className="h-2.5 w-full bg-slate-200/70 rounded-full overflow-hidden border border-slate-100/50 relative select-none">
+        <div 
+          className="h-full transition-all duration-500 ease-out rounded-full shadow-[inset_-2px_0_4px_rgba(0,0,0,0.05)]" 
+          style={{ width: `${((currentIndex + 1) / questions.length) * 100}%`, backgroundColor: themeColor }} 
+        />
       </div>
 
       <QuestionVisualCard 

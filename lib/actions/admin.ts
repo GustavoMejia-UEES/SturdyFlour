@@ -173,16 +173,11 @@ export async function getAssessmentData(assessmentId: string) {
   const env = getRequestContext().env;
   const db = getDb(env.DB);
 
-  const data = await db.query.assessments.findFirst({
-    where: eq(assessments.id, assessmentId)
-  });
-  
+  const [data] = await db.select().from(assessments).where(eq(assessments.id, assessmentId)).limit(1);
   if (!data) throw new Error("Evaluación no encontrada");
   
-  // Also find parent unit title for context
-  const parentUnit = await db.query.units.findFirst({
-    where: eq(units.id, data.unitId)
-  });
+  // Also find parent unit title for context using safe select
+  const [parentUnit] = await db.select().from(units).where(eq(units.id, data.unitId)).limit(1);
 
   return {
     id: data.id,

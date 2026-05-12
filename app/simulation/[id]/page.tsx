@@ -14,16 +14,16 @@ export default async function SimulationPage(props: { params: Promise<{ id: stri
   const env = getRequestContext().env;
   const db = getDb(env.DB);
 
-  // Load the exact assessment
-  const test = await db.query.assessments.findFirst({
-    where: eq(assessments.id, params.id),
-  });
+  // Load the exact assessment using safe select
+  const [test] = await db.select().from(assessments).where(eq(assessments.id, params.id)).limit(1);
 
   if (!test) return notFound();
 
-  // Lookup parents for context
-  const unit = await db.query.units.findFirst({ where: eq(units.id, test.unitId) });
-  const course = unit ? await db.query.courses.findFirst({ where: eq(courses.id, unit.courseId) }) : null;
+  // Lookup parents context safely
+  const [unit] = await db.select().from(units).where(eq(units.id, test.unitId)).limit(1);
+  const course = unit 
+    ? (await db.select().from(courses).where(eq(courses.id, unit.courseId)).limit(1))[0] 
+    : null;
 
   const questions: Question[] = JSON.parse(test.questionsJson);
 
@@ -38,6 +38,7 @@ export default async function SimulationPage(props: { params: Promise<{ id: stri
           questions={questions}
           assessmentId={test.id}
           courseId={course?.id || ""}
+          themeColor={course?.themeColor || "#2563eb"}
         />
       </main>
     </div>
