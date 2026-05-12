@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Question } from "@/lib/types/course";
-import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, Sigma, HelpCircle } from "lucide-react";
+import { PlusCircle, Trash2, Sparkles, AlignLeft, CircleDot, CheckCircle2, Code, Image as ImageIcon, Loader2, PlaySquare, FileJson, Sigma, HelpCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -206,6 +206,43 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                        testTitle="Examen en Construcción" 
                        courseId="preview"
                      />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {questions.length > 0 && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs text-slate-500 hover:text-indigo-600 h-8">
+                    <FileJson className="h-3.5 w-3.5" /> JSON Raw
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl bg-white">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 font-black">
+                      <FileJson className="h-5 w-5 text-indigo-600" /> Exportar JSON a Portapapeles
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-500">
+                      Copia este bloque y pégalo en tu chat de IA favorito para que genere mejoras, correcciones de código o feedback más completo instantáneamente.
+                    </p>
+                    <div className="relative group">
+                      <pre className="bg-slate-950 text-green-400 font-mono text-[10px] p-4 rounded-xl max-h-[300px] overflow-y-auto border shadow-inner selection:bg-indigo-500/30">
+                        {JSON.stringify(questions, null, 2)}
+                      </pre>
+                      <Button 
+                        size="sm" 
+                        className="absolute top-2 right-2 opacity-90 bg-indigo-600 hover:bg-indigo-700"
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(questions, null, 2));
+                          alert("¡Copiado al portapapeles! Listo para pegar en tu LLM.");
+                        }}
+                      >
+                        Copiar
+                      </Button>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
