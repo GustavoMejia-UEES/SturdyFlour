@@ -58,6 +58,24 @@ className="border-b border-white/5 bg-[#030712]/90 backdrop-blur-xl sticky top-0
 
 ---
 
+## 🎨 5. Aislamiento Visual & Acento Temático (Admin vs Simulador)
+
+Para mantener la profesionalidad del espacio de edición y la inmersión interactiva del alumno, separamos estrictamente el uso de colores dinámicos:
+
+### En el Panel Administrativo y Creador de Evaluaciones
+- **Regla:** El panel de administración NUNCA debe heredar dinámicamente el color de acento de un curso para botones, bordes o fondos de UI primaria.
+- **Estética:** Debe ser **estable, uniforme y neutral**. Usamos exclusivamente la paleta **Premium Indigo (`bg-indigo-600`)** en combinación con bordes definidos Slate 200 y fondos Slate 50. Esto previene variaciones incómodas que degraden la experiencia de trabajo del docente.
+
+### En el Simulador del Alumno (`/simulation/[id]`)
+- **Regla:** Aquí es mandatorio inyectar dinamismo y recordarle al estudiante su ubicación académica actual.
+- **Banner Inmersivo (Top Bar):** Diseñamos un encabezado curvo (`rounded-[32px]`) de formato gigante pintado con el `themeColor` del curso de fondo, letras blancas de alto contraste y un patrón radial sutil (`radial-gradient` blanco translúcido al 15%).
+- **Barra de Progreso Temática:** La barra horizontal interactiva se rellena dinámicamente con el color del curso usando estilos en línea en lugar de clases Tailwind estáticas:
+  ```tsx
+  style={{ backgroundColor: themeColor }}
+  ```
+
+---
+
 ## 🛠️ Checklist para Nuevas Pantallas
 
 Para replicar este look exactamente:
@@ -65,5 +83,6 @@ Para replicar este look exactamente:
 2. ¿Los bordes tienen baja opacidad (`border-white/10` o similar)?
 3. ¿Hay un balance claro entre el Cian Neón y el espacio oscuro?
 4. ¿Las fuentes usan `tracking-tighter` para lucir compactas y modernas?
+5. ¿Las pantallas administrativas usan Indigo estable y el simulador el color de acento dinámico del curso?
 
 ¡Sigue estos principios y mantendrás a SturdyFlour en la cima del diseño moderno! 🚀🥂

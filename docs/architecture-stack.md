@@ -22,6 +22,18 @@ Hemos evitado las bases de datos SQL pesadas centralizadas. En su lugar, usamos 
 D1 provee consistencia global con SQL estándar, integrado nativamente en el motor de Cloudflare.
 - **ORM**: Usamos **Drizzle ORM** para la máxima eficiencia tipada. A diferencia de Prisma, Drizzle no levanta motores secundarios, es código puro JS optimizado para el Edge.
 
+> [!WARNING]
+> **Límite Crítico de D1 & Edge Runtimes:** 
+> En Cloudflare Edge, el uso de Queries Relacionales avanzadas de Drizzle (`db.query.assessments.findFirst()`) con sub-cláusulas dinámicas a veces provoca excepciones internas del parser (Error 500) debido al compilador de los Workers.
+> **Regla Obligatoria**: En Server Actions o rutas con `export const runtime = 'edge'`, escribe queries utilizando la sintaxis SQL Atómica/Estándar:
+> ```typescript
+> // INCORRECTO (Riesgo de error 500 en el Edge)
+> const test = await db.query.assessments.findFirst({ where: eq(assessments.id, id) });
+> 
+> // CORRECTO (100% Estable y Seguro en Edge)
+> const [test] = await db.select().from(assessments).where(eq(assessments.id, id)).limit(1);
+> ```
+
 ### 2. Archivos (PDFs & Multimedia): Cloudflare R2
 R2 es una réplica compatible con AWS S3, pero con **Zero Egress Fees** (0 Costo por tráfico de descarga).
 - Almacenamos los PDFs del repositorio de forma segura.
