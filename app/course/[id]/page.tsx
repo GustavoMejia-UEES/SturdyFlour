@@ -10,21 +10,21 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 
+import { getAuthenticatedProfile } from '@/lib/auth/session';
+import { CourseManagementCard } from '@/components/admin/course-management-card';
+
 export const runtime = 'edge';
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const params = await props.params;
   const env = getRequestContext().env;
   const db = getDb(env.DB);
-  
   const course = await db.query.courses.findFirst({ where: eq(courses.id, params.id) });
-  
-  return {
-    title: course ? course.name : 'Curso',
-  };
+  return { title: course ? course.name : 'Curso' };
 }
 
 export default async function CourseDetailPage(props: { params: Promise<{ id: string }> }) {
+  const profile = await getAuthenticatedProfile();
   const params = await props.params;
   const env = getRequestContext().env;
   const db = getDb(env.DB);
@@ -142,6 +142,12 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
         {/* Sidebar for extras / metrics */}
         <div className="md:col-span-1">
           <div className="sticky top-24 space-y-6">
+            
+            {/* Admin Controls IF applicable */}
+            {(profile?.role === 'EDITOR' || profile?.role === 'ADMIN') && (
+              <CourseManagementCard courseId={course.id} courseName={course.name} />
+            )}
+
             <Card className="bg-gradient-to-br from-slate-800 to-slate-900 text-white border-none overflow-hidden shadow-xl relative">
               <div className="absolute top-0 right-0 h-32 w-32 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
               <CardHeader className="pb-4">

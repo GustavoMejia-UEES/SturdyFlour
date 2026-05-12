@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { desc } from 'drizzle-orm';
 import { getAuthenticatedProfile } from '@/lib/auth/session';
 import { Metadata } from 'next';
+import { CreateCourseDialog } from '@/components/admin/create-course-dialog';
 
 export const metadata: Metadata = {
   title: 'Catálogo de Cursos',
@@ -45,11 +46,7 @@ export default async function DashboardPage() {
 
           {/* Show the admin button ONLY if profile is editor/admin */}
           {(profile?.role === 'EDITOR' || profile?.role === 'ADMIN') && (
-            <Link href="/admin/import">
-              <Button variant="secondary" size="sm" className="gap-2 shadow-sm">
-                <PlusCircle className="h-4 w-4" /> Área Editor
-              </Button>
-            </Link>
+            <CreateCourseDialog />
           )}
         </div>
 
