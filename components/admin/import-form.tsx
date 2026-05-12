@@ -7,21 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { uploadCourseDefinition, addUnitToCourse } from '@/lib/actions/admin';
+import { uploadCourseDefinition, addUnitToCourse, getAssessmentData, editAssessmentContent } from '@/lib/actions/admin';
 import { ExamBuilder } from '@/components/admin/exam-builder';
 import type { Question, CourseDefinition } from '@/lib/types/course';
-import { Loader2, UploadCloud, CheckCircle, AlertCircle, Code, LayoutTemplate, Sparkles, ArrowLeft } from 'lucide-react';
+import { Loader2, UploadCloud, CheckCircle, AlertCircle, Code, LayoutTemplate, Sparkles, ArrowLeft, Pencil } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export function ImportForm() {
   const [jsonInput, setJsonInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialFetchLoading, setInitialFetchLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
   const router = useRouter();
   const searchParams = useSearchParams();
   const contextCourseId = searchParams.get("courseId");
+  const editTestId = searchParams.get("editTestId");
   const courseName = searchParams.get("name");
   const themeColor = searchParams.get("c") || "#2563eb"; // Default tailwind blue-600
 
@@ -34,6 +36,28 @@ export function ImportForm() {
     examTitle: "Diagnóstica 1"
   });
   const [visualQuestions, setVisualQuestions] = useState<Question[]>([]);
+
+  // FETCH EXISTING FOR EDIT MODE
+  useEffect(() => {
+    async function loadExisting() {
+      if (!editTestId) return;
+      setInitialFetchLoading(true);
+      try {
+        const data = await getAssessmentData(editTestId);
+        setVisualData(prev => ({
+          ...prev,
+          unitTitle: data.unitTitle || "Unidad Existente",
+          examTitle: data.title
+        }));
+        setVisualQuestions(data.questions || []);
+      } catch (err: any) {
+        setStatus({ type: 'error', message: `Error cargando datos: ${err.message}` });
+      } finally {
+        setInitialFetchLoading(false);
+      }
+    }
+    loadExisting();
+  }, [editTestId]);
 
   async function runUpload(payloadStr: string) {
     setLoading(true);
@@ -56,9 +80,10 @@ export function ImportForm() {
 
   async function handleVisualPublish() {
     // Validation rules differ based on Mode
-    const isAppendMode = !!contextCourseId;
+    const isEditMode = !!editTestId;
+    const isAppendMode = !!contextCourseId && !isEditMode;
     
-    if (!isAppendMode && (!visualData.code || !visualData.name || !visualData.instructor)) {
+    if (!isEditMode && !isAppendMode && (!visualData.code || !visualData.name || !visualData.instructor)) {
       setStatus({ type: 'error', message: "Debes ingresar el código, nombre y docente para crear un curso nuevo." });
       return;
     }
@@ -72,6 +97,21 @@ export function ImportForm() {
     setStatus(null);
 
     try {
+      if (isEditMode) {
+        // SURGICAL UPDATE MODE
+        await editAssessmentContent(editTestId, {
+          title: visualData.examTitle,
+          type: "PRACTICE", // Maintain practice default or retrieve existing type if needed
+          questions: visualQuestions
+        });
+        setStatus({ type: 'success', message: 'Evaluación actualizada correctamente. Redirigiendo...' });
+        setTimeout(() => {
+          router.push(contextCourseId ? `/course/${contextCourseId}` : '/cursos');
+          router.refresh();
+        }, 1500);
+        return;
+      }
+
       if (isAppendMode) {
         // ATOMIC APPEND MODE: We only push ONE unit.
         const payload = {
@@ -148,27 +188,36 @@ export function ImportForm() {
       <div className={cn("mb-8", contextCourseId ? "mt-12" : "")}>
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-              {contextCourseId ? "Añadir Nueva Unidad" : "Editor de Contenidos Global"}
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
+              {editTestId && <Pencil className="h-7 w-7 text-cyan-600" />}
+              {editTestId ? "Editar Evaluación Existente" : contextCourseId ? "Añadir Nueva Unidad" : "Editor de Contenidos Global"}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {contextCourseId ? "Inserta nuevo material didáctico directamente en el curso actual." : "Construye mallas curriculares visualmente o mediante exportación directa."}
+              {editTestId ? "Modifica los enunciados, respuestas o configuraciones de la prueba seleccionada." : contextCourseId ? "Inserta nuevo material didáctico directamente en el curso actual." : "Construye mallas curriculares visualmente o mediante exportación directa."}
             </p>
           </div>
         </div>
       </div>
 
-      {status && (
-        <div className={`p-4 rounded-lg border flex gap-3 items-start mb-6 animate-in fade-in slide-in-from-top-2 ${
-          status.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'
-        }`}>
-          {status.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" /> : <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />}
-          <div>
-            <div className="font-bold">{status.type === 'success' ? "Éxito" : "Fallo"}</div>
-            <div className="text-sm whitespace-pre-wrap">{status.message}</div>
-          </div>
+      {initialFetchLoading ? (
+        <div className="p-12 border bg-white rounded-2xl text-center flex flex-col items-center justify-center gap-3 shadow-sm animate-pulse">
+          <Loader2 className="h-10 w-10 animate-spin text-cyan-600" />
+          <p className="font-bold text-slate-600 text-lg">Recuperando evaluación...</p>
+          <p className="text-slate-400 text-xs">Espere un momento mientras cargamos la estructura visual de las preguntas.</p>
         </div>
-      )}
+      ) : (
+        <>
+          {status && (
+            <div className={`p-4 rounded-lg border flex gap-3 items-start mb-6 animate-in fade-in slide-in-from-top-2 ${
+              status.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'
+            }`}>
+              {status.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" /> : <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />}
+              <div>
+                <div className="font-bold">{status.type === 'success' ? "Éxito" : "Fallo"}</div>
+                <div className="text-sm whitespace-pre-wrap">{status.message}</div>
+              </div>
+            </div>
+          )}
 
       <Tabs defaultValue="visual" className="w-full space-y-6">
         {!contextCourseId && (
@@ -274,6 +323,8 @@ export function ImportForm() {
           </Card>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </>
   );
 }

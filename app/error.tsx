@@ -47,7 +47,21 @@ export default function RootErrorBoundary({
         </p>
 
         <button
-          onClick={() => window.location.reload()}
+          onClick={async () => {
+            try {
+              // AGGRESSIVE BROWSER CACHE PURGING FOR TOTAL RESET
+              if ('caches' in window) {
+                const keys = await window.caches.keys();
+                await Promise.all(keys.map(key => window.caches.delete(key)));
+              }
+              window.sessionStorage.clear();
+              window.localStorage.removeItem('supabase.auth.token'); // example clear if any
+            } catch (e) {
+              console.error("Forced cache wipe partially failed", e);
+            }
+            // Force reload bypassing cache
+            window.location.href = window.location.origin + window.location.pathname + '?sync=' + Date.now() + window.location.search.replace(/^\?/, '&');
+          }}
           className="w-full inline-flex items-center justify-center gap-2 h-11 px-6 font-bold rounded-xl bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-colors active:scale-[0.98]"
         >
           <RefreshCw className="h-4 w-4" /> Forzar Sincronización

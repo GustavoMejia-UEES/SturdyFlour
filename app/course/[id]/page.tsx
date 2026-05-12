@@ -5,7 +5,7 @@ import { Navbar } from '@/components/shared/navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { eq, asc } from 'drizzle-orm';
-import { ArrowLeft, BookOpen, GraduationCap, PlayCircle, HelpCircle, Target, ListChecks } from 'lucide-react';
+import { ArrowLeft, BookOpen, GraduationCap, PlayCircle, HelpCircle, Target, ListChecks, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
@@ -158,15 +158,24 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                                 <p className="text-xs text-muted-foreground mt-0.5">Preguntas interactivas + Feedback IA</p>
                               </div>
                             </div>
-                            <Link href={`/simulation/${test.id}`}>
-                              <Button 
-                                size="sm" 
-                                className="font-bold gap-2 group-hover:scale-105 transition-transform shadow-sm text-white border-0" 
-                                style={{ backgroundColor: themeHex }}
-                              >
-                                Iniciar <PlayCircle className="h-4 w-4" />
-                              </Button>
-                            </Link>
+                            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+                              {(profile?.role === 'EDITOR' || profile?.role === 'ADMIN') && (
+                                <Link href={`/admin/import?courseId=${course.id}&editTestId=${test.id}&name=${encodeURIComponent(course.name)}&c=${encodeURIComponent(themeHex)}`}>
+                                  <Button variant="outline" size="sm" className="font-bold gap-1.5 border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
+                                    <Pencil className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600" /> <span className="hidden xs:inline">Editar</span>
+                                  </Button>
+                                </Link>
+                              )}
+                              <Link href={`/simulation/${test.id}`}>
+                                <Button 
+                                  size="sm" 
+                                  className="font-bold gap-2 group-hover:scale-105 transition-transform shadow-sm text-white border-0" 
+                                  style={{ backgroundColor: themeHex }}
+                                >
+                                  Iniciar <PlayCircle className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </div>
                           </CardContent>
                         </Card>
                       ))

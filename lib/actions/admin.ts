@@ -164,3 +164,77 @@ export async function deleteCourse(courseId: string) {
     throw new Error(`Fallo al eliminar: ${e.message}`);
   }
 }
+
+/**
+ * Surgical retrieval of a single assessment for the client-side visual editor
+ */
+export async function getAssessmentData(assessmentId: string) {
+  await requireRole(['ADMIN', 'EDITOR']);
+  const env = getRequestContext().env;
+  const db = getDb(env.DB);
+
+  const data = await db.query.assessments.findFirst({
+    where: eq(assessments.id, assessmentId)
+  });
+  
+  if (!data) throw new Error("Evaluación no encontrada");
+  
+  // Also find parent unit title for context
+  const parentUnit = await db.query.units.findFirst({
+    where: eq(units.id, data.unitId)
+  });
+
+  return {
+    id: data.id,
+    customId: data.customId,
+    title: data.title,
+    type: data.type,
+    questions: JSON.parse(data.questionsJson),
+    unitTitle: parentUnit?.title || "",
+    unitId: parentUnit?.id || ""
+  };
+}
+
+/**
+ * Surgical edit of an existing assessment
+ */
+export async function editAssessmentContent(assessmentId: string, data: { title: string, type: string, questions: any[] }) {
+  await requireRole(['ADMIN', 'EDITOR']);
+  const env = getRequestContext().env;
+  const db = getDb(env.DB);
+
+  try {
+    await db.update(assessments).set({
+      title: data.title,
+      type: data.type,
+      questionsJson: JSON.stringify(data.questions)
+    }).where(eq(assessments.id, assessmentId));
+
+    return { success: true };
+  } catch (e: any) {
+    throw new Error(`Error actualizando evaluación: ${e.message}`);
+  }
+}
+
+/**
+ * Deletes a single assessment surgically
+ */
+export async function deleteAssessment(assessmentId: string) {
+  await requireRole(['ADMIN', 'EDITOR']);
+  const env = getRequestContext().env;
+  const db = getDb(env.DB);
+
+  try {
+    // Wipe dependent metrics first
+    await db.delete(likes).where(eq(likes.assessmentId, assessmentId));
+    await db.delete(maxScores).where(eq(maxScores.assessmentId, assessmentId));
+    
+    // Wipe the node itself
+    await db.delete(assessments).where(eq(assessments.id, assessmentId));
+
+    return { success: true };
+  } catch (e: any) {
+    throw new Error(`Error al eliminar la evaluación: ${e.message}`);
+  }
+}
+
