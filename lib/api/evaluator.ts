@@ -25,7 +25,11 @@ export async function evaluateOpenQuestion(
       body: JSON.stringify({
         question_text: questionText,
         student_answer: studentAnswer,
-        context: aiContext
+        context: {
+          ...aiContext,
+          // Forzamos al motor a ser súper conciso a nivel de API para no cansar visualmente al usuario
+          evaluation_style: `${aiContext.evaluation_style || "Evaluación estándar."}\n\n⚠️ [REGLA DE ESTILO CRÍTICA]: Tu análisis final DEBE SER SUMAMENTE CONCISO, DIRECTO Y BREVE (máximo 1 o 2 párrafos muy cortos o viñetas muy puntuales). Ve directo al grano con un tono ágil y motivador. Evita introducciones largas, despedidas repetitivas y texto de relleno.`
+        }
       }),
     });
 
