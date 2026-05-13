@@ -12,6 +12,7 @@ import { Metadata } from 'next';
 
 import { getAuthenticatedProfile } from '@/lib/auth/session';
 import { CourseManagementCard } from '@/components/admin/course-management-card';
+import { DeleteUnitButton, DeleteAssessmentButton } from '@/components/admin/delete-buttons';
 
 export const runtime = 'edge';
 
@@ -125,7 +126,12 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                     >
                       Unidad #{idx + 1} ({unit.customId})
                     </span>
-                    <h3 className="text-xl font-extrabold text-slate-800">{unit.title}</h3>
+                    <div className="flex items-center">
+                      <h3 className="text-xl font-extrabold text-slate-800">{unit.title}</h3>
+                      {(profile?.role === 'EDITOR' || profile?.role === 'ADMIN') && (
+                        <DeleteUnitButton unitId={unit.id} title={unit.title} />
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid gap-4">
@@ -160,11 +166,14 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                             </div>
                             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
                               {(profile?.role === 'EDITOR' || profile?.role === 'ADMIN') && (
-                                <Link href={`/admin/import?courseId=${course.id}&editTestId=${test.id}&name=${encodeURIComponent(course.name)}&c=${encodeURIComponent(themeHex)}`}>
-                                  <Button variant="outline" size="sm" className="font-bold gap-1.5 border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
-                                    <Pencil className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600" /> <span className="hidden xs:inline">Editar</span>
-                                  </Button>
-                                </Link>
+                                <>
+                                  <Link href={`/admin/import?courseId=${course.id}&editTestId=${test.id}&name=${encodeURIComponent(course.name)}&c=${encodeURIComponent(themeHex)}`}>
+                                    <Button variant="outline" size="sm" className="font-bold gap-1.5 border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
+                                      <Pencil className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600" /> <span className="hidden xs:inline">Editar</span>
+                                    </Button>
+                                  </Link>
+                                  <DeleteAssessmentButton assessmentId={test.id} title={test.title} />
+                                </>
                               )}
                               <Link href={`/simulation/${test.id}`}>
                                 <Button 

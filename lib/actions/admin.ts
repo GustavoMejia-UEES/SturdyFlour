@@ -232,4 +232,36 @@ export async function deleteAssessment(assessmentId: string) {
     throw new Error(`Error al eliminar la evaluación: ${e.message}`);
   }
 }
+/**
+ * Deletes a single unit surgically, cascading into its assessments and interactions
+ */
+export async function deleteUnit(unitId: string) {
+  await requireRole(['ADMIN', 'EDITOR']);
+  const env = getRequestContext().env;
+  const db = getDb(env.DB);
 
+  try {
+    // 1. Find all associated Assessments
+    const assessRows = await db.select({ id: assessments.id })
+      .from(assessments)
+      .where(eq(assessments.unitId, unitId))
+      .all();
+    const assessIds = assessRows.map(a => a.id);
+
+    if (assessIds.length > 0) {
+      // 2. Wipe lower-level dependent interactions
+      await db.delete(likes).where(inArray(likes.assessmentId, assessIds));
+      await db.delete(maxScores).where(inArray(maxScores.assessmentId, assessIds));
+      
+      // 3. Wipe Assessments themselves
+      await db.delete(assessments).where(inArray(assessments.id, assessIds));
+    }
+
+    // 4. Wipe the Unit node itself
+    await db.delete(units).where(eq(units.id, unitId));
+
+    return { success: true };
+  } catch (e: any) {
+    throw new Error(`Error al eliminar la unidad: ${e.message}`);
+  }
+}
