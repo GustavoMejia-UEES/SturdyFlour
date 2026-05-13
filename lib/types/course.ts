@@ -28,6 +28,9 @@ export const QuestionSchema = z.discriminatedUnion('type', [
       topic: z.string(),
       expected_concepts: z.array(z.string()),
       difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
+      ideal_answer: z.string().optional(),
+      evaluation_style: z.string().optional(),
+      passing_criteria: z.string().optional(),
     }),
   })
 ]);

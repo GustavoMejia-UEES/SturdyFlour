@@ -82,7 +82,10 @@ const DEFAULT_JSON_TEMPLATES: Question[] = [
         "índices b-tree",
         "lectura de páginas secuencial"
       ],
-      difficulty: "intermediate"
+      difficulty: "intermediate",
+      ideal_answer: "El Table Scan recorre fila por fila en complejidad O(N), ineficiente para millones de registros. El Index Scan usa una estructura B-Tree con complejidad O(log N) para saltar directo a las páginas de datos indexadas.",
+      evaluation_style: "Sé riguroso con el uso de términos técnicos. Si falla, explícalo usando una analogía de un directorio telefónico.",
+      passing_criteria: "Debe mencionar la diferencia entre secuencial y búsqueda por índice."
     }
   }
 ];
@@ -117,6 +120,10 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
   // AI State
   const [aiTopic, setAiTopic] = useState("");
   const [aiConcepts, setAiConcepts] = useState("");
+  const [aiDifficulty, setAiDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
+  const [aiIdealAnswer, setAiIdealAnswer] = useState("");
+  const [aiEvalStyle, setAiEvalStyle] = useState("");
+  const [aiPassingCriteria, setAiPassingCriteria] = useState("");
 
   // New Feature States
   const [imageUrl, setImageUrl] = useState("");
@@ -172,6 +179,10 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
       setUiType('AI');
       setAiTopic(q.ai_context?.topic || "");
       setAiConcepts(q.ai_context?.expected_concepts?.join(", ") || "");
+      setAiDifficulty(q.ai_context?.difficulty || 'intermediate');
+      setAiIdealAnswer(q.ai_context?.ideal_answer || "");
+      setAiEvalStyle(q.ai_context?.evaluation_style || "");
+      setAiPassingCriteria(q.ai_context?.passing_criteria || "");
     } else {
       // MULTIPLE CHOICE TYPES (Standard, Code Sandbox, or True/False)
       const opts = q.options || [];
@@ -287,6 +298,10 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
     setImageUrl("");
     setAiTopic("");
     setAiConcepts("");
+    setAiDifficulty("intermediate");
+    setAiIdealAnswer("");
+    setAiEvalStyle("");
+    setAiPassingCriteria("");
 
     setUiType(val);
     if (val === 'TF') {
@@ -322,6 +337,10 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
     setCodeSnippet("");
     setAiTopic("");
     setAiConcepts("");
+    setAiDifficulty("intermediate");
+    setAiIdealAnswer("");
+    setAiEvalStyle("");
+    setAiPassingCriteria("");
     setCorrectIds(["a"]);
     setMcqOptions([{ id: "a", text: "" }, { id: "b", text: "" }]);
     setImageUrl("");
@@ -364,7 +383,10 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
         ai_context: {
           topic: aiTopic || "General",
           expected_concepts: aiConcepts.split(",").map(c => c.trim()).filter(c => c),
-          difficulty: 'beginner'
+          difficulty: aiDifficulty,
+          ideal_answer: aiIdealAnswer.trim() || undefined,
+          evaluation_style: aiEvalStyle.trim() || undefined,
+          passing_criteria: aiPassingCriteria.trim() || undefined,
         }
       };
     }
@@ -385,6 +407,10 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
     setCodeSnippet("");
     setAiTopic("");
     setAiConcepts("");
+    setAiDifficulty("intermediate");
+    setAiIdealAnswer("");
+    setAiEvalStyle("");
+    setAiPassingCriteria("");
     setCorrectIds(["a"]);
     setMcqOptions([{ id: "a", text: "" }, { id: "b", text: "" }]);
     setImageUrl("");
@@ -589,7 +615,14 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                     type: 'AI_OPEN_QUESTION',
                     question_text: tempContent || "Escribe tu pregunta a la izquierda...",
                     image_url: imageUrl || undefined,
-                    ai_context: { topic: aiTopic, expected_concepts: [], difficulty: 'beginner' }
+                    ai_context: { 
+                      topic: aiTopic, 
+                      expected_concepts: aiConcepts.split(",").map(c => c.trim()).filter(Boolean), 
+                      difficulty: aiDifficulty,
+                      ideal_answer: aiIdealAnswer,
+                      evaluation_style: aiEvalStyle,
+                      passing_criteria: aiPassingCriteria
+                    }
                   }
                 : {
                     id: 'preview',
@@ -763,16 +796,63 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-4 bg-indigo-50/30 p-4 rounded-xl border border-indigo-100">
-                          <Label className="text-indigo-900 font-bold block">Criterios de IA</Label>
-                          <div className="space-y-3">
-                            <div className="grid gap-1">
-                              <Label className="text-xs text-indigo-700">Materia o Tópico</Label>
-                              <Input placeholder="Contexto general" value={aiTopic} onChange={e => setAiTopic(e.target.value)} className="bg-white h-9 border-indigo-200" />
+                        <div className="space-y-4 bg-indigo-50/30 p-5 rounded-xl border border-indigo-100">
+                          <div className="flex justify-between items-center border-b border-indigo-100/60 pb-2 mb-2">
+                            <Label className="text-indigo-900 font-black block text-sm uppercase tracking-wider">Inteligencia Artificial</Label>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs font-bold text-indigo-700 shrink-0">Dificultad</Label>
+                              <Select value={aiDifficulty} onValueChange={(v: any) => setAiDifficulty(v)}>
+                                <SelectTrigger className="h-7 w-32 bg-white border-indigo-200 text-xs">
+                                  <SelectValue placeholder="Seleccionar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="beginner">Principiante</SelectItem>
+                                  <SelectItem value="intermediate">Intermedio</SelectItem>
+                                  <SelectItem value="advanced">Avanzado</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
-                            <div className="grid gap-1">
-                              <Label className="text-xs text-indigo-700">Palabras Clave / Conceptos (Separado por comas)</Label>
-                              <Textarea placeholder="Shadowing, hoisting, scopes..." value={aiConcepts} onChange={e => setAiConcepts(e.target.value)} className="bg-white text-sm border-indigo-200 min-h-[60px]" />
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs font-bold text-indigo-800">Materia o Tópico Académico</Label>
+                              <Input placeholder="Ej: Algoritmos, Redes, Bases de Datos" value={aiTopic} onChange={e => setAiTopic(e.target.value)} className="bg-white h-9 border-indigo-200" />
+                            </div>
+
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs font-bold text-indigo-800 flex items-center justify-between">
+                                Conceptos que debe mencionar (Separados por comas)
+                                <span className="text-[10px] font-normal text-indigo-500 font-sans lowercase">(ej: b-tree, secuencial)</span>
+                              </Label>
+                              <Textarea placeholder="Concepto A, Concepto B, Concepto C..." value={aiConcepts} onChange={e => setAiConcepts(e.target.value)} className="bg-white text-sm border-indigo-200 min-h-[50px] resize-none" />
+                            </div>
+
+                            <div className="h-px bg-indigo-100/80 my-1" />
+
+                            <div className="grid gap-1.5 bg-white/60 p-3 rounded-lg border border-indigo-100/50">
+                              <Label className="text-xs font-bold text-indigo-900 flex gap-1 items-center"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Respuesta Esperada de Referencia</Label>
+                              <Textarea 
+                                placeholder="Explica brevemente qué es una respuesta ideal para calibrar a la IA..." 
+                                value={aiIdealAnswer} 
+                                onChange={e => setAiIdealAnswer(e.target.value)} 
+                                className="bg-white text-sm border-indigo-200 min-h-[70px] placeholder:text-slate-400" 
+                              />
+                            </div>
+
+                            <div className="grid gap-1.5 bg-white/60 p-3 rounded-lg border border-indigo-100/50">
+                              <Label className="text-xs font-bold text-indigo-900 flex gap-1 items-center"><Sparkles className="h-3.5 w-3.5 text-indigo-600" /> Estilo de Evaluación / Reglas para el LLM</Label>
+                              <Textarea 
+                                placeholder="Instrucciones especiales: 'Sé estricto', 'usa analogías sencillas', 'explica paso a paso si falla'..." 
+                                value={aiEvalStyle} 
+                                onChange={e => setAiEvalStyle(e.target.value)} 
+                                className="bg-white text-sm border-indigo-200 min-h-[70px] placeholder:text-slate-400" 
+                              />
+                            </div>
+
+                            <div className="grid gap-1.5">
+                              <Label className="text-xs font-bold text-indigo-800">Criterios Mínimos para Aprobación (Opcional)</Label>
+                              <Input placeholder="¿Qué es lo mínimo indispensable para no tener un 0%?" value={aiPassingCriteria} onChange={e => setAiPassingCriteria(e.target.value)} className="bg-white h-9 border-indigo-200" />
                             </div>
                           </div>
                         </div>

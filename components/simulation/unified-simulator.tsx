@@ -88,6 +88,7 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId, t
   // State for async AI evaluations results
   const [aiEvaluations, setAiEvaluations] = useState<Record<string, AIResult>>({});
   const [evaluating, setEvaluating] = useState(false);
+  const [retryingIds, setRetryingIds] = useState<Record<string, boolean>>({});
 
   const [showResults, setShowResults] = useState(false);
 
@@ -105,7 +106,8 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId, t
         const isMatch = JSON.stringify(correctAnswers) === JSON.stringify(userArr);
         if (isMatch) earnedPoints += 100;
       } else if (q.type === 'AI_OPEN_QUESTION') {
-        earnedPoints += (aiEvaluations[q.id]?.score || 0);
+        const val = aiEvaluations[q.id]?.score;
+        earnedPoints += (val !== undefined && val >= 0 ? val : 0);
       }
     });
     return Math.round(earnedPoints / questions.length);
@@ -125,9 +127,7 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId, t
       const result = await evaluateOpenQuestion(
         currentQuestion.question_text,
         answer,
-        currentQuestion.ai_context.topic,
-        currentQuestion.ai_context.expected_concepts,
-        currentQuestion.ai_context.difficulty
+        currentQuestion.ai_context
       );
       
       setAiEvaluations(prev => ({ ...prev, [currentQuestion.id]: result as AIResult }));
@@ -139,10 +139,37 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId, t
         setShowResults(true);
       }
     } catch (error) {
-      console.error(error);
-      alert("Error evaluando con IA. Inténtalo de nuevo.");
+      console.error("⚠️ AI Evaluator failed during exam flow:", error);
+      // Set state to -1 representing 'pending/error' so they aren't blocked
+      setAiEvaluations(prev => ({ 
+        ...prev, 
+        [currentQuestion.id]: { score: -1, analysis: "Pendiente", found_concepts: [] } 
+      }));
+      
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+      } else {
+        setShowResults(true);
+      }
     } finally {
       setEvaluating(false);
+    }
+  }
+
+  async function handleRetryEvaluation(q: Question) {
+    if (q.type !== 'AI_OPEN_QUESTION') return;
+    const answer = userAnswers[q.id];
+    if (!answer) return;
+
+    setRetryingIds(prev => ({ ...prev, [q.id]: true }));
+    try {
+      const result = await evaluateOpenQuestion(q.question_text, answer, q.ai_context);
+      setAiEvaluations(prev => ({ ...prev, [q.id]: result as AIResult }));
+    } catch (err) {
+      console.error("🔴 Manual retry failed:", err);
+      alert("El motor evaluador sigue sin responder. Por favor intenta de nuevo en un momento.");
+    } finally {
+      setRetryingIds(prev => ({ ...prev, [q.id]: false }));
     }
   }
 
@@ -179,29 +206,82 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId, t
           {questions.map((q, idx) => {
             if (q.type === 'AI_OPEN_QUESTION') {
               const evalRes = aiEvaluations[q.id];
+              const isPending = !evalRes || evalRes.score === -1;
+              const isRetrying = retryingIds[q.id];
+
               return (
-                <Card key={q.id} className="border-l-4 border-l-indigo-500">
+                <Card key={q.id} className={cn(
+                  "border-l-4 shadow-sm transition-all duration-500",
+                  isPending ? "border-l-amber-500 bg-amber-50/5" : "border-l-indigo-500 bg-white"
+                )}>
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start gap-2 mb-3">
-                      <h4 className="font-bold leading-tight prose prose-sm"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{`${idx+1}. ${q.question_text}`}</ReactMarkdown></h4>
-                      <span className="font-mono text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded shadow-sm">IA SCORING: {evalRes?.score ?? 0}%</span>
+                      <h4 className="font-bold leading-tight prose prose-sm flex-1 max-w-3xl">
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
+                          {`${idx+1}. ${q.question_text}`}
+                        </ReactMarkdown>
+                      </h4>
+                      <span className={cn(
+                        "font-mono text-[10px] font-black tracking-wider uppercase px-2.5 py-1 rounded-lg shadow-sm shrink-0 select-none",
+                        isPending 
+                          ? "bg-amber-100 text-amber-800 border border-amber-200" 
+                          : "bg-indigo-100 text-indigo-700 border border-indigo-200"
+                      )}>
+                        {isPending ? "IA: PENDIENTE" : `IA SCORING: ${evalRes?.score}%`}
+                      </span>
                     </div>
-                    <div className="text-sm bg-slate-50 p-3 rounded border mb-3 italic text-slate-700 prose prose-sm max-w-none">
+                    <div className="text-sm bg-slate-50 p-3.5 rounded-2xl border mb-3 italic text-slate-700 prose prose-sm max-w-none font-sans shadow-inner">
                       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{`"${userAnswers[q.id]}"`}</ReactMarkdown>
                     </div>
-                    <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 flex gap-3">
-                      <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-indigo-900 font-medium">{evalRes?.analysis || "No se pudo generar feedback."}</p>
-                        {evalRes?.found_concepts && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {evalRes.found_concepts.map(c => (
-                              <span key={c} className="text-[10px] uppercase font-bold bg-white text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-200">CONCEPT: {c}</span>
-                            ))}
+                    
+                    {isPending ? (
+                      <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all">
+                        <div className="flex gap-3 items-start">
+                          <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 animate-pulse">
+                            <Loader2 className="h-4 w-4 text-amber-600 animate-spin" />
                           </div>
-                        )}
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide text-amber-800 mb-0.5">Calificación en Cola de Espera</p>
+                            <p className="text-xs text-amber-700 font-medium leading-relaxed">Hubo una congestión en la red. La respuesta está guardada correctamente, pero el motor evaluador no respondió a tiempo.</p>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          disabled={isRetrying}
+                          onClick={() => handleRetryEvaluation(q)}
+                          className="bg-white border-amber-300 text-amber-700 hover:bg-amber-100 gap-2 text-xs font-bold shadow-sm shrink-0"
+                        >
+                          {isRetrying ? (
+                            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Solicitando...</>
+                          ) : (
+                            <><RefreshCw className="h-3.5 w-3.5" /> Forzar Calificación</>
+                          )}
+                        </Button>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="bg-indigo-50/80 p-4 rounded-2xl border border-indigo-100 flex gap-3.5 relative overflow-hidden">
+                        <div className="absolute -right-4 -top-4 h-16 w-16 bg-indigo-200/20 rounded-full blur-xl pointer-events-none"></div>
+                        <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5 animate-pulse" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black uppercase tracking-[0.15em] text-indigo-900 mb-2.5 font-sans flex items-center gap-1.5">
+                            Evaluación Pedagógica
+                          </p>
+                          <div className="text-[13px] text-indigo-950/90 leading-relaxed font-medium font-sans prose prose-sm max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
+                              {evalRes?.analysis || ""}
+                            </ReactMarkdown>
+                          </div>
+                          {evalRes?.found_concepts && evalRes.found_concepts.length > 0 && (
+                            <div className="mt-3.5 flex flex-wrap gap-1.5 border-t border-indigo-100/60 pt-2.5">
+                              {evalRes.found_concepts.map(c => (
+                                <span key={c} className="text-[9px] uppercase font-black bg-indigo-600 text-white px-2 py-0.5 rounded-md border border-indigo-700 shadow-sm shadow-indigo-600/10 tracking-wider font-mono">CONCEPT: {c}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
