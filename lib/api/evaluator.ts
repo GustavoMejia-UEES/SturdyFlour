@@ -34,13 +34,17 @@ export async function evaluateOpenQuestion(
     }
 
     const data = (await response.json()) as any;
+    
+    // n8n nests the agent structured parser under the "output" field
+    const result = data.output || data;
+    const scoreVal = Number(result.score);
 
     // Ensure strict structural normalization to match UnifiedSimulator types
     return {
-      score: Number(data.score) ?? 0,
-      analysis: String(data.analysis || data.feedback || "El motor de IA evaluó tu respuesta con éxito, pero omitió el análisis textual."),
-      found_concepts: Array.isArray(data.found_concepts) ? data.found_concepts : [],
-      missing_concepts: Array.isArray(data.missing_concepts) ? data.missing_concepts : []
+      score: isNaN(scoreVal) ? 0 : scoreVal,
+      analysis: String(result.analysis || result.feedback || "El motor de IA evaluó tu respuesta con éxito, pero omitió el análisis textual."),
+      found_concepts: Array.isArray(result.found_concepts) ? result.found_concepts : [],
+      missing_concepts: Array.isArray(result.missing_concepts) ? result.missing_concepts : []
     };
   } catch (error) {
     console.error("🔴 AI evaluation workflow failure:", error);
