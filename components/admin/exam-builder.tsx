@@ -576,7 +576,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                             setRawJsonInput(e.target.value);
                             setJsonError(null);
                           }}
-                          placeholder={'[\n  {\n    "type": "MULTIPLE_CHOICE",\n    "question_text": "Contenido..."\n  }\n]'}
+                          placeholder={'[\n  {\n    "type": "MULTIPLE_CHOICE",\n    "question_text": "### Enunciado Múltiple...\\nSoporta Markdown.",\n    "options": [\n      { "id": "a", "text": "Opción A" },\n      { "id": "b", "text": "Opción B" }\n    ],\n    "correct_id": "a"\n  },\n  {\n    "type": "AI_OPEN_QUESTION",\n    "question_text": "### Pregunta Abierta Evaluada por IA...\\nEscribe tu caso práctico.",\n    "ai_context": {\n      "topic": "Tópico Académico",\n      "expected_concepts": ["Concepto Clave A", "Concepto Clave B"],\n      "difficulty": "intermediate",\n      "ideal_answer": "Explicación modelo que el motor de IA usará de benchmark...",\n      "evaluation_style": "Directivas específicas de tono y rigor pedagógico...",\n      "passing_criteria": "El alumno debe mencionar al menos..."\n    }\n  }\n]'}
                         />
                       </div>
 
