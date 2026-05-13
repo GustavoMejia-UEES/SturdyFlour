@@ -445,7 +445,7 @@ export function ExamBuilder({ onChange, initialQuestions = [], themeColor = "#25
                     <PlaySquare className="h-3.5 w-3.5" /> Previsualizar
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl h-[90vh] overflow-y-auto bg-slate-50 flex flex-col p-0">
+                <DialogContent className="max-w-6xl h-[90vh] overflow-y-auto bg-slate-50 flex flex-col p-0">
                   <DialogHeader className="p-6 pb-2 shrink-0">
                     <DialogTitle className="text-indigo-900 flex items-center gap-2 font-black">
                       <Sparkles className="h-5 w-5" /> Simulación de Prueba (Modo Preview)
