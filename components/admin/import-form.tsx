@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { uploadCourseDefinition, addUnitToCourse, getAssessmentData, editAssessmentContent } from '@/lib/actions/admin';
+import { uploadCourseDefinition, addUnitToCourse, getAssessmentData, editAssessmentContent, getCourseUnits, addAssessmentToExistingUnit } from '@/lib/actions/admin';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ExamBuilder } from '@/components/admin/exam-builder';
 import type { Question, CourseDefinition } from '@/lib/types/course';
 import { Loader2, UploadCloud, CheckCircle, AlertCircle, Code, LayoutTemplate, Sparkles, ArrowLeft, Pencil } from 'lucide-react';
@@ -36,6 +37,23 @@ export function ImportForm() {
     examTitle: "Diagnóstica 1"
   });
   const [visualQuestions, setVisualQuestions] = useState<Question[]>([]);
+  
+  const [existingUnits, setExistingUnits] = useState<{id: string, customId: string, title: string}[]>([]);
+  const [selectedUnitId, setSelectedUnitId] = useState<string>("NEW");
+
+  // FETCH EXISTING UNITS FOR DROP-DOWN
+  useEffect(() => {
+    async function loadUnits() {
+      if (!contextCourseId || editTestId) return;
+      try {
+        const units = await getCourseUnits(contextCourseId);
+        setExistingUnits(units || []);
+      } catch (err) {
+        console.error("Error fetching units for grouping:", err);
+      }
+    }
+    loadUnits();
+  }, [contextCourseId, editTestId]);
 
   // FETCH EXISTING FOR EDIT MODE
   useEffect(() => {
@@ -88,8 +106,15 @@ export function ImportForm() {
       return;
     }
     
-    if (!visualData.unitTitle || visualQuestions.length === 0) {
-      setStatus({ type: 'error', message: "Debes ingresar un título para la Unidad y al menos 1 pregunta." });
+    const isNewUnit = !isAppendMode || selectedUnitId === "NEW";
+
+    if (isNewUnit && !visualData.unitTitle) {
+      setStatus({ type: 'error', message: "Debes ingresar un título para la nueva Unidad." });
+      return;
+    }
+    
+    if (visualQuestions.length === 0) {
+      setStatus({ type: 'error', message: "Debes agregar al menos 1 pregunta al banco." });
       return;
     }
 
@@ -113,19 +138,30 @@ export function ImportForm() {
       }
 
       if (isAppendMode) {
-        // ATOMIC APPEND MODE: We only push ONE unit.
-        const payload = {
-          unit_title: visualData.unitTitle,
-          assessments: [
-            {
-              test_id: `T${Date.now().toString().slice(-4)}`, // generated dynamic simple ID
-              test_title: visualData.examTitle,
-              type: "PRACTICE",
-              questions: visualQuestions
-            }
-          ]
-        };
-        await addUnitToCourse(contextCourseId, payload);
+        if (selectedUnitId === "NEW") {
+          // ATOMIC APPEND MODE: We push ONE NEW unit.
+          const payload = {
+            unit_title: visualData.unitTitle,
+            assessments: [
+              {
+                test_id: `T${Date.now().toString().slice(-4)}`, // generated dynamic simple ID
+                test_title: visualData.examTitle,
+                type: "PRACTICE",
+                questions: visualQuestions
+              }
+            ]
+          };
+          await addUnitToCourse(contextCourseId, payload);
+        } else {
+          // SURGICAL INJECTION MODE: We append quiz to preexisting Unit!
+          const payload = {
+            test_id: `T${Date.now().toString().slice(-4)}`,
+            test_title: visualData.examTitle,
+            type: "PRACTICE",
+            questions: visualQuestions
+          };
+          await addAssessmentToExistingUnit(selectedUnitId, payload);
+        }
       } else {
         // LEGACY OVERWRITE MODE: Total tree building.
         const fullPayload: CourseDefinition = {
@@ -253,10 +289,37 @@ export function ImportForm() {
                     <hr className="my-2 opacity-50"/>
                   </>
                 )}
-                <div className="grid gap-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Título de Unidad*</Label>
-                  <Input className="focus:ring-indigo-500 border-slate-200" placeholder="Ej: Unidad 1: Conceptos Básicos" value={visualData.unitTitle} onChange={e => setVisualData({...visualData, unitTitle: e.target.value})} />
-                </div>
+                {/* Target Unit Selector for appending modes */}
+                {contextCourseId && !editTestId && existingUnits.length > 0 && (
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs font-bold text-slate-700">Asignar a Unidad</Label>
+                    <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+                      <SelectTrigger className="w-full border-slate-200 bg-white shadow-sm">
+                        <SelectValue placeholder="Selecciona Destino" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NEW" className="font-bold text-indigo-600">✨ + Nueva Unidad</SelectItem>
+                        {existingUnits.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            Existente: {u.title} ({u.customId})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {(!contextCourseId || editTestId || selectedUnitId === "NEW") ? (
+                  <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1">
+                    <Label className="text-xs font-bold text-slate-700">Título de Unidad*</Label>
+                    <Input className="focus:ring-indigo-500 border-slate-200" placeholder="Ej: Unidad 1: Conceptos Básicos" value={visualData.unitTitle} onChange={e => setVisualData({...visualData, unitTitle: e.target.value})} />
+                  </div>
+                ) : (
+                  <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-800 flex flex-col gap-0.5">
+                     <span className="font-bold">📌 Agrupación Activa</span>
+                     <span>El examen se inyectará dentro de la unidad seleccionada arriba sin duplicarla.</span>
+                  </div>
+                )}
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">Título del Examen/Quiz*</Label>
                   <Input placeholder="Evaluación Semanal 1" value={visualData.examTitle} onChange={e => setVisualData({...visualData, examTitle: e.target.value})}/>

@@ -5,7 +5,7 @@ import { getDb } from '../db';
 import { profiles, courses, units, assessments, likes, maxScores } from '../db/schema';
 import { CourseDefinitionSchema } from '../types/course';
 import { requireRole } from '../auth/session';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { eq, inArray, sql, asc } from 'drizzle-orm';
 
 export async function uploadCourseDefinition(rawJson: string) {
   // ... existing full upload function ...
@@ -119,6 +119,58 @@ export async function addUnitToCourse(courseId: string, data: any) {
     return { success: true };
   } catch (e: any) {
     throw new Error(`Fallo al añadir unidad: ${e.message}`);
+  }
+}
+
+/**
+ * Fetches all existing Units for a given course to populate visual editor selectors.
+ */
+export async function getCourseUnits(courseId: string) {
+  await requireRole(['ADMIN', 'EDITOR']);
+  const env = getRequestContext().env;
+  const db = getDb(env.DB);
+
+  try {
+    const courseUnits = await db.select({
+      id: units.id,
+      customId: units.customId,
+      title: units.title
+    })
+    .from(units)
+    .where(eq(units.courseId, courseId))
+    .orderBy(asc(units.orderIndex))
+    .all();
+
+    return courseUnits;
+  } catch (e: any) {
+    throw new Error(`Fallo al recuperar unidades: ${e.message}`);
+  }
+}
+
+/**
+ * Surgically injects a brand-new assessment into an already existing Unit node.
+ */
+export async function addAssessmentToExistingUnit(unitId: string, data: any) {
+  await requireRole(['ADMIN', 'EDITOR']);
+  const env = getRequestContext().env;
+  const db = getDb(env.DB);
+
+  try {
+    // Ensure the unit exists
+    const [targetUnit] = await db.select({ id: units.id }).from(units).where(eq(units.id, unitId)).limit(1);
+    if (!targetUnit) throw new Error("Unidad de destino no encontrada.");
+
+    await db.insert(assessments).values({
+      unitId,
+      customId: data.test_id || `T${Date.now().toString().slice(-4)}`,
+      title: data.test_title,
+      type: data.type || "PRACTICE",
+      questionsJson: JSON.stringify(data.questions || []),
+    });
+
+    return { success: true };
+  } catch (e: any) {
+    throw new Error(`Fallo al añadir evaluación: ${e.message}`);
   }
 }
 
