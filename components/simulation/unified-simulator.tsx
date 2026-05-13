@@ -419,61 +419,183 @@ export function UnifiedSimulator({ testTitle, courseName, questions, courseId, t
         />
       </div>
 
-      <QuestionVisualCard 
-        question={currentQuestion}
-        value={userAnswers[currentQuestion.id]}
-        onChange={(val) => setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: val }))}
-        disabled={evaluating}
-      />
-
-      <div className="mt-5 flex justify-between items-center bg-white/50 backdrop-blur-sm border border-slate-200/60 p-4 rounded-2xl shadow-sm">
-        <Button 
-          variant="ghost" 
-          className="font-bold text-slate-500"
-          disabled={currentIndex === 0 || evaluating}
-          onClick={() => setCurrentIndex(prev => prev - 1)}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
-        </Button>
-
-        {(() => {
-          const currentVal = userAnswers[currentQuestion.id];
-          const hasValue = Array.isArray(currentVal) ? currentVal.length > 0 : !!currentVal;
-          
-          if (currentQuestion.type === 'AI_OPEN_QUESTION') {
-            return (
-              <Button 
-                disabled={!hasValue || evaluating}
-                onClick={processOpenAnswer}
-                className="font-bold px-8 bg-indigo-600 hover:bg-indigo-700 gap-2 shadow-lg shadow-indigo-200/50 rounded-xl"
-              >
-                {evaluating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Evaluando...</>
-                ) : (
-                  <>Enviar Respuesta <ChevronRight className="h-4 w-4" /></>
-                )}
-              </Button>
-            );
-          }
-
-          return currentIndex === questions.length - 1 ? (
-            <Button 
-              className="font-bold px-8 shadow-lg shadow-primary/20 rounded-xl"
-              disabled={!hasValue}
-              onClick={() => setShowResults(true)}
+      {/* SPLIT VIEW LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-6 items-start">
+        
+        {/* LEFT COLUMN: Context & Question Text (Sticky) */}
+        <div className="space-y-4 lg:sticky lg:top-6">
+          <div className="flex justify-between items-center">
+            <span 
+              className={cn(
+                "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border select-none shadow-sm",
+                currentQuestion.type === 'AI_OPEN_QUESTION' ? "bg-indigo-100 text-indigo-800 border-indigo-200" : "bg-blue-100 text-blue-800 border-blue-200"
+              )}
             >
-              Finalizar Prueba <Trophy className="ml-2 h-4 w-4" />
-            </Button>
-          ) : (
+              {currentQuestion.type === 'AI_OPEN_QUESTION' ? 'Respuesta Abierta (IA)' : 'Selección Múltiple'}
+            </span>
+          </div>
+
+          <Card className="shadow-xl border-border/40 bg-white overflow-hidden flex flex-col w-full min-h-[200px] rounded-2xl">
+            <div className="p-6 md:p-8">
+              <div className="prose prose-slate max-w-none prose-p:text-slate-700 prose-p:leading-relaxed prose-headings:text-slate-900 prose-headings:font-extrabold">
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
+                  {currentQuestion.question_text || "*(Sin título todavía)*"}
+                </ReactMarkdown>
+              </div>
+              {currentQuestion.image_url && (
+                <div className="mt-6 rounded-xl overflow-hidden border bg-black/5 max-h-[320px] flex justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={currentQuestion.image_url} 
+                    alt="Contexto" 
+                    className="object-contain max-h-[320px] w-auto"
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* RIGHT COLUMN: Answer Inputs & Bottom Row (Interactive) */}
+        <div className="space-y-6">
+          <Card className="shadow-xl border-border/40 bg-white w-full rounded-2xl">
+            <div className="p-6 md:p-8">
+              {currentQuestion.type === 'MULTIPLE_CHOICE' ? (
+                <div className="grid gap-3.5">
+                  {(() => {
+                    const isMulti = Array.isArray(currentQuestion.correct_id);
+                    const value = userAnswers[currentQuestion.id];
+                    const currentSelected = value || (isMulti ? [] : null);
+                    
+                    const toggleOption = (optId: string) => {
+                      if (evaluating) return;
+                      if (isMulti) {
+                        const currentArr = Array.isArray(currentSelected) ? currentSelected : [];
+                        const next = currentArr.includes(optId) 
+                          ? currentArr.filter((i: any) => i !== optId)
+                          : [...currentArr, optId];
+                        setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: next }));
+                      } else {
+                        setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: optId }));
+                      }
+                    };
+
+                    const isSelected = (optId: string) => {
+                       return isMulti 
+                        ? Array.isArray(currentSelected) && currentSelected.includes(optId)
+                        : currentSelected === optId;
+                    };
+
+                    return currentQuestion.options && currentQuestion.options.length > 0 ? currentQuestion.options.map((opt) => (
+                      <button 
+                        type="button"
+                        key={opt.id}
+                        onClick={() => toggleOption(opt.id)}
+                        disabled={evaluating}
+                        className={cn(
+                          "w-full text-left px-5 py-4 rounded-2xl border-2 transition-all font-medium flex items-start gap-4 group active:scale-[0.99]",
+                          isSelected(opt.id)
+                            ? "shadow-sm" 
+                            : "bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50"
+                        )}
+                        style={isSelected(opt.id) ? { borderColor: themeColor, backgroundColor: `${themeColor}0D` } : {}}
+                      >
+                        <div 
+                          className={cn(
+                            "w-6 h-6 shrink-0 flex items-center justify-center transition-colors mt-0.5",
+                            isMulti ? "rounded-lg border-2" : "rounded-full border-2",
+                            isSelected(opt.id) ? "" : "border-slate-300 group-hover:border-slate-400"
+                          )}
+                          style={isSelected(opt.id) ? { backgroundColor: themeColor, borderColor: themeColor } : {}}
+                        >
+                          {isSelected(opt.id) && (
+                            isMulti ? <CheckCircle2 className="h-4 w-4 text-white" /> : <div className="w-2 h-2 bg-white rounded-full" />
+                          )}
+                        </div>
+                        <div className="prose prose-slate prose-sm leading-relaxed flex-1">
+                          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>{opt.text || "Opción sin texto"}</ReactMarkdown>
+                        </div>
+                      </button>
+                    )) : <div className="text-center py-6 text-slate-400 italic">No hay opciones disponibles en esta pregunta.</div>;
+                  })()}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 bg-indigo-50 p-4 rounded-xl text-sm border border-indigo-100 mb-2 shadow-sm">
+                    <Sparkles className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-indigo-950 block mb-0.5">Evaluación de Inteligencia Artificial</span>
+                      <p className="text-indigo-800 leading-relaxed text-[13px]">
+                        El motor evaluará conceptos relativos a: <strong className="text-indigo-900 font-black">{(currentQuestion as any).ai_context?.topic || "Temática General"}</strong>. ¡Sé lo más detallado posible!
+                      </p>
+                    </div>
+                  </div>
+                  <Textarea 
+                    placeholder="Redacta aquí tu respuesta argumentada..."
+                    className="min-h-[220px] text-[15px] resize-none border-2 focus-visible:ring-indigo-500 p-4 rounded-xl shadow-inner bg-slate-50/30 focus-visible:ring-offset-0"
+                    value={userAnswers[currentQuestion.id] || ""}
+                    onChange={(e) => setUserAnswers(prev => ({ ...prev, [currentQuestion.id]: e.target.value }))}
+                    disabled={evaluating}
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Navigation Card Container */}
+          <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-md">
             <Button 
-              className="font-bold px-8 rounded-xl shadow-md"
-              disabled={!hasValue}
-              onClick={() => setCurrentIndex(prev => prev + 1)}
+              variant="ghost" 
+              className="font-bold text-slate-500 hover:bg-slate-100 h-11 px-5 rounded-xl transition-all active:scale-95"
+              disabled={currentIndex === 0 || evaluating}
+              onClick={() => setCurrentIndex(prev => prev - 1)}
             >
-              Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+              <ChevronLeft className="h-4 w-4 mr-1.5" /> Anterior
             </Button>
-          );
-        })()}
+
+            {(() => {
+              const currentVal = userAnswers[currentQuestion.id];
+              const hasValue = Array.isArray(currentVal) ? currentVal.length > 0 : !!currentVal;
+              
+              if (currentQuestion.type === 'AI_OPEN_QUESTION') {
+                return (
+                  <Button 
+                    disabled={!hasValue || evaluating}
+                    onClick={processOpenAnswer}
+                    className="font-black h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-lg shadow-indigo-600/20 rounded-xl active:scale-95"
+                  >
+                    {evaluating ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Evaluando...</>
+                    ) : (
+                      <>Enviar Respuesta <ChevronRight className="h-4 w-4 ml-0.5" /></>
+                    )}
+                  </Button>
+                );
+              }
+
+              return currentIndex === questions.length - 1 ? (
+                <Button 
+                  className="font-black h-11 px-8 shadow-lg shadow-indigo-950/10 rounded-xl text-white transition-all active:scale-95 border-0"
+                  style={{ backgroundColor: themeColor }}
+                  disabled={!hasValue}
+                  onClick={() => setShowResults(true)}
+                >
+                  Finalizar Prueba <Trophy className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  className="font-black h-11 px-8 rounded-xl text-white shadow-md shadow-indigo-950/10 active:scale-95 transition-all border-0"
+                  style={{ backgroundColor: themeColor }}
+                  disabled={!hasValue}
+                  onClick={() => setCurrentIndex(prev => prev + 1)}
+                >
+                  Siguiente <ChevronRight className="h-4 w-4 ml-1.5" />
+                </Button>
+              );
+            })()}
+          </div>
+        </div>
+
       </div>
     </div>
   );
